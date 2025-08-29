@@ -30,10 +30,9 @@
   },
   "devDependencies": {
     "@remix-run/dev": "^2.17.0",
-    "@tailwindcss/postcss": "^4.1.12",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.12",
+    "tailwindcss": "^3.4.17",
     "vite": "^6.3.5"
   }
 }
