@@ -3,6 +3,7 @@ import ProblemSection from "../components/ProblemSection";
 import FeaturesSection from "../components/FeaturesSection";
 import HowItWorksSection from "../components/HowItWorksSection";
 import BenefitsSection from "../components/BenefitsSection";
+import MVPFeaturesSection from "../components/MVPFeaturesSection";
 import CTASection from "../components/CTASection";
 
 export default function Index() {
@@ -16,6 +17,9 @@ export default function Index() {
       
       {/* Features */}
       <FeaturesSection />
+      
+      {/* MVP Features */}
+      <MVPFeaturesSection />
       
       {/* How It Works */}
       <HowItWorksSection />

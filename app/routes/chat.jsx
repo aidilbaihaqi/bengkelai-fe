@@ -384,12 +384,12 @@ export default function Chat() {
                           🏪
                         </div>
                         {/* Marker Label */}
-                        <div className="absolute top-14 left-1/2 transform -translate-x-1/2 bg-white bg-opacity-95 px-3 py-2 rounded-lg text-sm font-medium shadow-xl whitespace-nowrap border-2 border-gray-200">
-                          <div className="font-bold text-gray-800">{bengkel.name}</div>
-                          <div className="text-gray-600 text-xs">{bengkel.distance}</div>
+                        <div className="absolute top-14 left-1/2 transform -translate-x-1/2 backdrop-blur-xl bg-gradient-to-br from-slate-800/90 via-slate-700/80 to-slate-800/90 px-3 py-2 rounded-lg text-sm font-medium shadow-xl whitespace-nowrap border border-cyan-400/30 ring-1 ring-white/20">
+                          <div className="font-bold text-white">{bengkel.name}</div>
+                          <div className="text-cyan-300/80 text-xs">{bengkel.distance}</div>
                           <div className="flex items-center mt-1">
-                            <span className="text-yellow-500 text-xs">⭐</span>
-                            <span className="text-xs ml-1 font-medium">{bengkel.rating}</span>
+                            <span className="text-yellow-400 text-xs">⭐</span>
+                            <span className="text-xs ml-1 font-medium text-white">{bengkel.rating}</span>
                           </div>
                         </div>
                       </div>
@@ -398,26 +398,26 @@ export default function Chat() {
                 </div>
                 
                 {/* Map Controls Overlay */}
-                <div className="absolute top-4 right-4 z-30 bg-white rounded-lg shadow-lg p-3">
-                  <div className="text-sm font-bold text-gray-800 mb-2">🗺️ Google Maps</div>
-                  <div className="text-xs text-gray-600">Klik marker untuk detail</div>
+                <div className="absolute top-4 right-4 z-30 backdrop-blur-xl bg-gradient-to-br from-slate-800/80 via-slate-700/60 to-slate-800/80 rounded-lg shadow-lg p-3 border border-cyan-400/30 ring-1 ring-white/20">
+                  <div className="text-sm font-bold text-white mb-2">🗺️ Google Maps</div>
+                  <div className="text-xs text-cyan-300/80">Klik marker untuk detail</div>
                 </div>
                 
                 {/* Map Legend */}
-                <div className="absolute bottom-4 left-4 bg-white p-4 rounded-lg shadow-xl text-sm z-30 border-2 border-gray-200">
-                  <div className="font-bold mb-3 text-gray-800">📍 Bengkel Terdekat</div>
+                <div className="absolute bottom-4 left-4 backdrop-blur-xl bg-gradient-to-br from-slate-800/80 via-slate-700/60 to-slate-800/80 p-4 rounded-lg shadow-xl text-sm z-30 border border-cyan-400/30 ring-1 ring-white/20">
+                  <div className="font-bold mb-3 text-white">📍 Bengkel Terdekat</div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 bg-red-500 rounded-full shadow-sm"></div>
-                      <span className="text-gray-700">Bengkel Jaya Motor</span>
+                      <div className="w-4 h-4 bg-red-500 rounded-full shadow-sm ring-1 ring-white/20"></div>
+                      <span className="text-white/90">Bengkel Jaya Motor</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 bg-blue-500 rounded-full shadow-sm"></div>
-                      <span className="text-gray-700">Honda AHASS Sentral</span>
+                      <div className="w-4 h-4 bg-blue-500 rounded-full shadow-sm ring-1 ring-white/20"></div>
+                      <span className="text-white/90">Honda AHASS Sentral</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 bg-purple-500 rounded-full shadow-sm"></div>
-                      <span className="text-gray-700">Yamaha Service Center</span>
+                      <div className="w-4 h-4 bg-purple-500 rounded-full shadow-sm ring-1 ring-white/20"></div>
+                      <span className="text-white/90">Yamaha Service Center</span>
                     </div>
                   </div>
                 </div>
@@ -581,26 +581,49 @@ export default function Chat() {
     { text: '📋 Riwayat Chat', action: 'history' }
   ];
 
-  // Auto scroll to bottom
+  // Enhanced auto scroll with animation timing
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end',
+        inline: 'nearest'
+      });
+    }, 100);
+    return () => clearTimeout(timer);
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+  
+  // Message entrance animations
+  const [animatingMessages, setAnimatingMessages] = useState(new Set());
+  
+  useEffect(() => {
+    const latestMessage = messages[messages.length - 1];
+    if (latestMessage && latestMessage.type === 'bot') {
+      setAnimatingMessages(prev => new Set([...prev, latestMessage.id]));
+      const timer = setTimeout(() => {
+        setAnimatingMessages(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(latestMessage.id);
+          return newSet;
+        });
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [messages]);
 
-  // Typing dots animation
+  // Enhanced typing animation effect with more realistic patterns
   useEffect(() => {
     if (isTyping) {
+      const patterns = ['.', '..', '...', '..', '.', ''];
+      let index = 0;
       const interval = setInterval(() => {
-        setTypingDots(prev => {
-          if (prev === '') return '.';
-          if (prev === '.') return '..';
-          if (prev === '..') return '...';
-          return '';
-        });
-      }, 500);
+        setTypingDots(patterns[index]);
+        index = (index + 1) % patterns.length;
+      }, 400);
       return () => clearInterval(interval);
     } else {
       setTypingDots('');
@@ -715,11 +738,17 @@ export default function Chat() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-cyan-500/5 to-blue-500/5 rounded-full blur-3xl" />
+      </div>
       {/* Interactive Map Modal */}
       {showMap && <InteractiveMap onClose={() => setShowMap(false)} />}
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 px-3 sm:px-4 py-3 sm:py-4">
+      <header className="backdrop-blur-xl bg-gradient-to-r from-slate-900/80 via-slate-800/60 to-slate-900/80 border-b border-cyan-500/20 px-3 sm:px-4 py-3 sm:py-4 relative z-10 ring-1 ring-white/10">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center flex-1 min-w-0">
             <Link to="/" className="flex items-center mr-3 sm:mr-6 hover:opacity-80 transition-opacity flex-shrink-0">
@@ -728,13 +757,13 @@ export default function Chat() {
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
               </div>
-              <span className="text-lg sm:text-xl font-bold text-gray-800">BengkelAI</span>
+              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">BengkelAI</span>
             </Link>
             <div className="flex items-center min-w-0 flex-1">
               <div className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 ${
                 isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
               }`}></div>
-              <span className="text-xs sm:text-sm text-gray-600 truncate">
+              <span className="text-xs sm:text-sm text-cyan-300/80 truncate">
                 {isConnected ? 'Real-time Connected' : 'Reconnecting...'}
               </span>
               {isTyping && (
@@ -746,7 +775,7 @@ export default function Chat() {
               )}
             </div>
           </div>
-          <div className="text-xs sm:text-sm text-gray-500 flex-shrink-0 ml-2">
+          <div className="text-xs sm:text-sm text-white/60 flex-shrink-0 ml-2">
             <span className="hidden sm:inline">Konsultasi Gratis</span>
             <span className="sm:hidden">Gratis</span>
           </div>
@@ -754,17 +783,17 @@ export default function Chat() {
       </header>
 
       {/* Chat Container */}
-      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full relative z-10">
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 space-y-3 sm:space-y-4">
-          {messages.map((message) => {
+          {messages.map((message, index) => {
             const getUrgencyColor = (urgency) => {
               switch(urgency) {
-                case 'critical': return 'border-l-4 border-red-500 bg-red-50';
-                case 'high': return 'border-l-4 border-orange-500 bg-orange-50';
-                case 'medium': return 'border-l-4 border-yellow-500 bg-yellow-50';
-                case 'low': return 'border-l-4 border-green-500 bg-green-50';
-                default: return 'bg-white';
+                case 'critical': return 'border-l-4 border-red-500 bg-gradient-to-br from-red-900/20 via-red-800/10 to-red-900/20 backdrop-blur-xl ring-1 ring-red-500/20';
+                case 'high': return 'border-l-4 border-orange-500 bg-gradient-to-br from-orange-900/20 via-orange-800/10 to-orange-900/20 backdrop-blur-xl ring-1 ring-orange-500/20';
+                case 'medium': return 'border-l-4 border-yellow-500 bg-gradient-to-br from-yellow-900/20 via-yellow-800/10 to-yellow-900/20 backdrop-blur-xl ring-1 ring-yellow-500/20';
+                case 'low': return 'border-l-4 border-green-500 bg-gradient-to-br from-green-900/20 via-green-800/10 to-green-900/20 backdrop-blur-xl ring-1 ring-green-500/20';
+                default: return 'bg-gradient-to-br from-slate-800/60 via-slate-700/40 to-slate-800/60 backdrop-blur-xl border border-cyan-500/20 ring-1 ring-white/10';
               }
             };
             
@@ -779,12 +808,27 @@ export default function Chat() {
             };
             
             return (
-              <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] sm:max-w-xs lg:max-w-md xl:max-w-lg ${
-                  message.type === 'user' 
-                    ? 'bg-teal-500 text-white rounded-2xl rounded-br-md' 
-                    : `${getUrgencyColor(message.urgency)} text-gray-800 rounded-2xl rounded-bl-md shadow-sm border border-gray-100`
-                } px-3 sm:px-4 py-2 sm:py-3`}>
+              <div 
+                key={message.id} 
+                className={`flex transition-all duration-500 ease-out transform ${
+                  message.type === 'user' ? 'justify-end' : 'justify-start'
+                } ${
+                  animatingMessages.has(message.id) 
+                    ? 'animate-pulse scale-105' 
+                    : 'animate-fadeIn hover:scale-[1.02]'
+                }`}
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                  animationFillMode: 'both'
+                }}
+              >
+                <div className={`max-w-[90%] sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl group relative ${
+                  message.type === 'user'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-br-md hover:-translate-y-1 active:scale-95 ring-1 ring-white/20'
+                    : `${getUrgencyColor(message.urgency)} hover:from-slate-800/95 hover:via-slate-700/85 hover:to-slate-800/95 text-white rounded-bl-md hover:-translate-y-1 hover:border-cyan-400/50`
+                } ${
+                  animatingMessages.has(message.id) ? 'ring-2 ring-cyan-400/50 ring-offset-2 ring-offset-slate-900' : ''
+                }`}>
                   {message.type === 'bot' && (
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center">
@@ -792,7 +836,7 @@ export default function Chat() {
                           <span className="text-white text-xs font-bold">AI</span>
                         </div>
                         {message.source && (
-                          <span className="text-xs text-gray-500">{message.source}</span>
+                          <span className="text-xs text-cyan-300/80">{message.source}</span>
                         )}
                       </div>
                       {message.urgency && (
@@ -801,7 +845,7 @@ export default function Chat() {
                             {getUrgencyBadge(message.urgency).text}
                           </span>
                           {message.category && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs capitalize">
+                            <span className="px-2 py-1 bg-slate-700/50 text-cyan-300 rounded-full text-xs capitalize border border-cyan-500/20">
                               {message.category}
                             </span>
                           )}
@@ -809,7 +853,12 @@ export default function Chat() {
                       )}
                     </div>
                   )}
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{renderFormattedText(message.content)}</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap group-hover:text-white transition-colors duration-200">{renderFormattedText(message.content)}</p>
+                  
+                  {/* Message glow effect for bot messages */}
+                  {message.type === 'bot' && animatingMessages.has(message.id) && (
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-400/10 to-blue-500/10 animate-pulse -z-10" />
+                  )}
                   
                   {/* Show Map Button for location-related messages */}
                   {message.showMap && (
@@ -822,10 +871,15 @@ export default function Chat() {
                       </button>
                     </div>
                   )}
-                  <div className="flex items-center justify-between mt-2 text-xs opacity-70">
-                    <span>{message.timestamp.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
-                    {message.type === 'user' && message.source && (
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs ml-2">
+                  <div className="flex items-center justify-between mt-2 text-xs opacity-70 group-hover:opacity-90 transition-opacity duration-200">
+                    <span className="flex items-center gap-1">
+                      <div className={`w-1.5 h-1.5 rounded-full ${
+                        message.type === 'user' ? 'bg-white/50' : 'bg-cyan-400/70'
+                      }`} />
+                      {message.timestamp.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {message.source && (
+                      <span className="text-cyan-300 font-medium px-2 py-1 bg-cyan-400/10 rounded-full border border-cyan-400/20">
                         {message.source}
                       </span>
                     )}
@@ -838,7 +892,7 @@ export default function Chat() {
           {/* Typing Indicator */}
           {isTyping && (
             <div className="flex justify-start">
-              <div className="bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+              <div className="bg-gradient-to-br from-slate-800/60 via-slate-700/40 to-slate-800/60 border border-cyan-400/30 rounded-2xl rounded-bl-md px-4 py-3 shadow-lg backdrop-blur-xl ring-1 ring-white/10">
                 <div className="flex items-center space-x-2">
                   <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-teal-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">AI</span>
@@ -849,12 +903,12 @@ export default function Chat() {
                       <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
                       <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                     </div>
-                    <span className="text-xs text-gray-600 ml-2">
+                    <span className="text-xs text-cyan-300/80 ml-2">
                       🔍 Menganalisis gejala{typingDots}
                     </span>
                   </div>
                 </div>
-                <div className="mt-2 text-xs text-gray-500">
+                <div className="mt-2 text-xs text-white/60">
                   💡 Memproses data dari 1000+ kasus serupa...
                 </div>
               </div>
@@ -871,7 +925,7 @@ export default function Chat() {
               <button
                 key={index}
                 onClick={() => handleQuickAction(action.action)}
-                className="bg-white hover:bg-gray-50 text-gray-700 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm border border-gray-200 transition-colors duration-200 hover:border-teal-300"
+                className="backdrop-blur-xl bg-slate-800/40 hover:bg-slate-700/60 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm border border-cyan-500/20 transition-all duration-200 hover:border-cyan-400/40 hover:shadow-lg ring-1 ring-white/10"
               >
                 <span className="hidden sm:inline">{action.text}</span>
                 <span className="sm:hidden">{action.text.split(' ')[0]}</span>
@@ -881,9 +935,9 @@ export default function Chat() {
         </div>
 
         {/* Quick Suggestions */}
-        <div className="px-3 sm:px-4 py-3 bg-gray-50 border-t">
-          <p className="text-xs text-gray-600 mb-2">💡 Coba tanyakan masalah motor Anda:</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+        <div className="px-3 sm:px-4 py-3 backdrop-blur-xl bg-gradient-to-r from-slate-900/60 via-slate-800/40 to-slate-900/60 border-t border-cyan-500/20 ring-1 ring-white/5">
+          <p className="text-xs text-cyan-300/80 mb-2">💡 Coba tanyakan masalah motor Anda:</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
             {[
               { text: '🔋 Motor susah hidup', query: 'susah hidup', category: 'Starter' },
               { text: '💨 Asap putih keluar', query: 'asap putih', category: 'Mesin' },
@@ -898,24 +952,24 @@ export default function Chat() {
                   setInputMessage(suggestion.query);
                   setTimeout(() => handleSendMessage(), 100);
                 }}
-                className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 hover:bg-teal-50 hover:border-teal-300 transition-all duration-200 hover:shadow-sm text-left"
+                className="px-3 py-2 backdrop-blur-xl bg-slate-800/40 border border-cyan-500/20 rounded-lg text-xs text-white hover:bg-slate-700/60 hover:border-cyan-400/40 transition-all duration-200 hover:shadow-lg text-left ring-1 ring-white/10"
               >
                 <div className="font-medium">{suggestion.text}</div>
-                <div className="text-gray-500 text-xs mt-1">{suggestion.category}</div>
+                <div className="text-cyan-300/60 text-xs mt-1">{suggestion.category}</div>
               </button>
             ))}
           </div>
           
           {/* Emergency Actions */}
           <div className="border-t pt-2">
-            <p className="text-xs text-red-600 mb-2">🚨 Darurat:</p>
-            <div className="flex gap-2">
+            <p className="text-xs text-red-400 mb-2">🚨 Darurat:</p>
+            <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => {
                   setInputMessage('rem blong');
                   setTimeout(() => handleSendMessage(), 100);
                 }}
-                className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg text-xs font-medium hover:bg-red-600 transition-colors"
+                className="flex-1 px-3 py-2 backdrop-blur-xl bg-red-900/40 text-red-300 rounded-lg text-xs font-medium hover:bg-red-800/60 transition-all duration-200 border border-red-500/30 ring-1 ring-white/10"
               >
                 🛑 Rem Bermasalah
               </button>
@@ -924,7 +978,7 @@ export default function Chat() {
                   setInputMessage('oli habis');
                   setTimeout(() => handleSendMessage(), 100);
                 }}
-                className="flex-1 px-3 py-2 bg-orange-500 text-white rounded-lg text-xs font-medium hover:bg-orange-600 transition-colors"
+                className="flex-1 px-3 py-2 backdrop-blur-xl bg-orange-900/40 text-orange-300 rounded-lg text-xs font-medium hover:bg-orange-800/60 transition-all duration-200 border border-orange-500/30 ring-1 ring-white/10"
               >
                 ⚠️ Oli Habis
               </button>
@@ -933,7 +987,7 @@ export default function Chat() {
         </div>
 
         {/* Input Area */}
-        <div className="bg-white border-t border-gray-200 px-3 sm:px-4 py-3 sm:py-4">
+        <div className="backdrop-blur-xl bg-gradient-to-r from-slate-900/80 via-slate-800/60 to-slate-900/80 border-t border-cyan-500/20 px-3 sm:px-4 py-3 sm:py-4 ring-1 ring-white/10">
           <div className="flex items-end space-x-2 sm:space-x-3">
             <div className="flex-1">
               <textarea
@@ -942,7 +996,7 @@ export default function Chat() {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ketik gejala motor Anda..."
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-sm"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 backdrop-blur-xl bg-slate-800/40 border border-cyan-500/30 rounded-2xl focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400/50 resize-none text-sm text-white placeholder-white/60 ring-1 ring-white/10"
                 rows={1}
                 style={{ minHeight: '44px', maxHeight: '120px' }}
                 disabled={isLoading}
@@ -951,10 +1005,10 @@ export default function Chat() {
             <Button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
-              className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-semibold transition-all duration-200 min-w-[60px] sm:min-w-[80px] ${
+              className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-semibold transition-all duration-200 min-w-[60px] sm:min-w-[80px] backdrop-blur-xl border ring-1 ring-white/20 ${
                 !inputMessage.trim() || isLoading
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-teal-500 hover:bg-teal-600 text-white hover:scale-105 transform'
+                  ? 'bg-slate-600/50 text-slate-400 cursor-not-allowed border-slate-500/30'
+                  : 'bg-gradient-to-r from-cyan-600/80 to-blue-600/80 hover:from-cyan-500/90 hover:to-blue-500/90 text-white hover:scale-105 transform border-cyan-400/30'
               }`}
             >
               {isLoading ? (
@@ -971,7 +1025,7 @@ export default function Chat() {
           </div>
           
           {/* Disclaimer */}
-          <p className="text-xs text-gray-500 mt-2 text-center">
+          <p className="text-xs text-white/60 mt-2 text-center">
             💡 Ini adalah diagnosa awal berbasis AI. Untuk masalah serius, segera konsultasi dengan mekanik profesional.
           </p>
         </div>
