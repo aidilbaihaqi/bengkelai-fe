@@ -1,19 +1,24 @@
+import { FaQuestionCircle, FaMoneyBillWave, FaClock } from 'react-icons/fa';
+
 export default function ProblemSection() {
   const problems = [
     {
-      icon: "?",
+      icon: FaQuestionCircle,
       title: "Bingung Gejala Motor",
-      description: "Sulit tahu masalah sebenarnya ketika motor bermasalah"
+      description: "Sulit tahu masalah sebenarnya ketika motor bermasalah",
+      color: "text-orange-500"
     },
     {
-      icon: "$",
+      icon: FaMoneyBillWave,
       title: "Takut Ditipu Bengkel",
-      description: "Harga & diagnosa sering tidak transparan"
+      description: "Harga & diagnosa sering tidak transparan",
+      color: "text-green-500"
     },
     {
-      icon: "T",
+      icon: FaClock,
       title: "Buang Waktu",
-      description: "Antri lama untuk cek masalah ringan"
+      description: "Antri lama untuk cek masalah ringan",
+      color: "text-blue-500"
     }
   ];
 
@@ -35,8 +40,8 @@ export default function ProblemSection() {
               key={index}
               className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-300 text-center group hover:scale-105 transform transition-transform"
             >
-              <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">
-                {problem.icon}
+              <div className={`text-6xl mb-6 group-hover:scale-110 transition-transform duration-300 ${problem.color}`}>
+                <problem.icon className="mx-auto" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">
                 {problem.title}

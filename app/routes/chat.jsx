@@ -1,7 +1,38 @@
-import { useState, useEffect, useRef } from "react";
+/*
+ * SETUP GOOGLE PLACES API:
+ * 1. Buka Google Cloud Console (https://console.cloud.google.com/)
+ * 2. Buat project baru atau pilih project yang sudah ada
+ * 3. Enable Google Places API (New) dan Places API
+ * 4. Buat API Key di Credentials
+ * 5. Ganti 'YOUR_GOOGLE_PLACES_API_KEY' dengan API key yang valid
+ * 6. Tambahkan domain ke API key restrictions untuk keamanan
+ * 
+ * CATATAN: Tanpa API key yang valid, aplikasi akan menggunakan dummy data
+ */
+
+import { useState, useRef, useEffect } from "react";
 import { Link } from "@remix-run/react";
 import { json } from "@remix-run/node";
 import Button from "../components/Button";
+import { searchDataset, getSuggestionsByCategory, getTotalEntries } from '../data/motorDataset';
+
+// CSS untuk animasi fadeIn
+const fadeInStyle = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+  }
+`;
+
+// Inject CSS ke head
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = fadeInStyle;
+  document.head.appendChild(styleElement);
+}
 
 // Loader function for SSR support
 export const loader = async () => {
@@ -44,84 +75,503 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
   const [typingDots, setTypingDots] = useState('');
+  const [showMap, setShowMap] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Comprehensive AI responses dataset for demo
-  const aiResponses = {
-    // Masalah Starter & Kelistrikan
-    'susah hidup': {
-      response: '🔋 **Diagnosa: Masalah Starter/Kelistrikan**\n\nKemungkinan penyebab:\n• Aki lemah/soak (70%)\n• Starter motor rusak (20%)\n• Kabel massa longgar (10%)\n\n💰 **Estimasi Biaya:**\n• Ganti aki: Rp 200-400k\n• Service starter: Rp 150-300k\n• Cek kabel: Rp 50k\n\n🔧 **Langkah Cepat:**\n1. Coba starter ulang 2-3x\n2. Periksa lampu indikator\n3. Jika masih susah, jangan dipaksa',
-      urgency: 'medium',
-      category: 'kelistrikan'
-    },
-    'tidak bisa hidup': {
-      response: '⚡ **Diagnosa: Sistem Starter Mati Total**\n\nKemungkinan penyebab:\n• Aki habis total (60%)\n• Sekring putus (25%)\n• Starter motor mati (15%)\n\n💰 **Estimasi Biaya:**\n• Cas aki: Rp 20-30k\n• Ganti sekring: Rp 10-25k\n• Ganti starter: Rp 300-500k\n\n⚠️ **Tindakan Darurat:**\nCoba kick starter jika ada, atau dorong motor untuk bump start.',
-      urgency: 'high',
-      category: 'kelistrikan'
-    },
+  // AI Response using new dataset
+  const generateAIResponse = (message) => {
+    const lowerMessage = message.toLowerCase();
     
-    // Masalah Mesin & Pembakaran
-    'asap putih': {
-      response: '💨 **Diagnosa: Masalah Pembakaran**\n\nKemungkinan penyebab:\n• Ring piston aus (50%)\n• Head gasket bocor (30%)\n• Oli masuk ruang bakar (20%)\n\n💰 **Estimasi Biaya:**\n• Ganti ring piston: Rp 300-600k\n• Ganti head gasket: Rp 200-400k\n• Tune up mesin: Rp 150-250k\n\n🚨 **Peringatan:**\nJangan biarkan terlalu lama, bisa merusak mesin lebih parah!',
-      urgency: 'high',
-      category: 'mesin'
-    },
-    'asap hitam': {
-      response: '🖤 **Diagnosa: Pembakaran Tidak Sempurna**\n\nKemungkinan penyebab:\n• Karburator kotor/setelan salah (60%)\n• Filter udara kotor (25%)\n• Busi aus/kotor (15%)\n\n💰 **Estimasi Biaya:**\n• Bersih karbu + stel: Rp 75-150k\n• Ganti filter udara: Rp 25-50k\n• Ganti busi: Rp 15-35k\n\n✅ **Solusi Cepat:**\nCoba bersihkan filter udara dulu, sering kali ini penyebabnya.',
-      urgency: 'medium',
-      category: 'mesin'
-    },
-    'mesin kasar': {
-      response: '🔧 **Diagnosa: Mesin Tidak Halus**\n\nKemungkinan penyebab:\n• Karburator kotor (40%)\n• Busi aus/gap tidak tepat (35%)\n• Timing pengapian salah (25%)\n\n💰 **Estimasi Biaya:**\n• Service karburator: Rp 50-100k\n• Ganti busi: Rp 15-35k\n• Stel timing: Rp 50-75k\n\n🎯 **Rekomendasi:**\nMulai dari yang termurah - ganti busi dulu, lalu bersih karbu.',
-      urgency: 'low',
-      category: 'mesin'
-    },
+    // Check for location-related keywords
+    const locationKeywords = ['lokasi', 'map', 'bengkel terdekat', 'dimana', 'peta', 'terdekat'];
+    const hasLocationKeyword = locationKeywords.some(keyword => lowerMessage.includes(keyword));
     
-    // Masalah Rem
-    'rem blong': {
-      response: '🚨 **BAHAYA! Masalah Rem Kritis**\n\n⚠️ **JANGAN BERKENDARA!**\n\nKemungkinan penyebab:\n• Minyak rem habis (40%)\n• Kampas rem habis (35%)\n• Selang rem bocor (25%)\n\n💰 **Estimasi Biaya:**\n• Isi minyak rem: Rp 25-50k\n• Ganti kampas rem: Rp 75-150k\n• Ganti selang rem: Rp 100-200k\n\n🆘 **Tindakan Segera:**\n1. Matikan mesin\n2. Parkir di tempat aman\n3. Hubungi bengkel terdekat',
-      urgency: 'critical',
-      category: 'rem'
-    },
-    'rem keras': {
-      response: '🛑 **Diagnosa: Sistem Rem Keras**\n\nKemungkinan penyebab:\n• Kampas rem tipis (50%)\n• Minyak rem kotor (30%)\n• Kaliper rem macet (20%)\n\n💰 **Estimasi Biaya:**\n• Ganti kampas rem: Rp 75-150k\n• Kuras minyak rem: Rp 50-75k\n• Service kaliper: Rp 100-200k\n\n⚡ **Tips Sementara:**\nPeriksa ketebalan kampas rem, jika tipis segera ganti.',
-      urgency: 'medium',
-      category: 'rem'
-    },
+    // Search in dataset
+    const result = searchDataset(lowerMessage);
     
-    // Masalah Oli & Pelumasan
-    'oli bocor': {
-      response: '🛢️ **Diagnosa: Kebocoran Oli**\n\nKemungkinan penyebab:\n• Gasket tutup klep bocor (40%)\n• Seal kruk as bocor (35%)\n• Baut drain oli longgar (25%)\n\n💰 **Estimasi Biaya:**\n• Ganti gasket: Rp 50-100k\n• Ganti seal: Rp 100-200k\n• Kencangkan baut: Rp 25k\n\n🔍 **Cara Cek:**\nLihat di bawah motor, oli menetes dari mana? Foto dan kirim ke bengkel.',
-      urgency: 'medium',
-      category: 'pelumasan'
-    },
-    'oli habis': {
-      response: '⚠️ **Diagnosa: Oli Mesin Habis**\n\nKemungkinan penyebab:\n• Bocor tidak terdeteksi (60%)\n• Oli terbakar (pembakaran) (25%)\n• Lupa ganti oli lama (15%)\n\n💰 **Estimasi Biaya:**\n• Ganti oli + filter: Rp 75-150k\n• Cek kebocoran: Rp 50k\n• Perbaikan bocor: Rp 100-300k\n\n🚨 **PENTING:**\nJangan nyalakan mesin tanpa oli! Bisa rusak total.',
-      urgency: 'critical',
-      category: 'pelumasan'
-    },
+    return {
+      text: result.response,
+      showMap: hasLocationKeyword || result.showMap || false,
+      urgency: result.urgency,
+      category: result.category
+    };
+  };
+
+  // Interactive Map Component
+  const InteractiveMap = ({ onClose }) => {
+    const [selectedBengkel, setSelectedBengkel] = useState(null);
+    const [zoomLevel, setZoomLevel] = useState(1);
+    const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const mapRef = useRef(null);
     
-    // Masalah Transmisi & Kopling
-    'gigi susah masuk': {
-      response: '⚙️ **Diagnosa: Masalah Transmisi**\n\nKemungkinan penyebab:\n• Oli gardan kental/kotor (50%)\n• Kopling aus (30%)\n• Setelan kopling salah (20%)\n\n💰 **Estimasi Biaya:**\n• Ganti oli gardan: Rp 50-75k\n• Ganti kampas kopling: Rp 150-300k\n• Stel kopling: Rp 25-50k\n\n🔧 **Coba Dulu:**\nPanaskan mesin 5 menit, kadang oli kental karena dingin.',
-      urgency: 'medium',
-      category: 'transmisi'
-    },
+    // State untuk workshop data dari Google Places API
+    const [bengkelData, setBengkelData] = useState([]);
+    const [isLoadingWorkshops, setIsLoadingWorkshops] = useState(false);
+    const [workshopsError, setWorkshopsError] = useState(null);
+
+    // Fungsi untuk mengambil data workshop dari Google Places API
+    const fetchWorkshopsFromGooglePlaces = async (lat = -6.2088, lng = 106.8456, radius = 5000) => {
+      setIsLoadingWorkshops(true);
+      setWorkshopsError(null);
+      
+      try {
+        // Menggunakan Google Places API Nearby Search
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/place/nearbysearch/json?` +
+          `location=${lat},${lng}&` +
+          `radius=${radius}&` +
+          `type=car_repair&` +
+          `key=YOUR_GOOGLE_PLACES_API_KEY`, // Ganti dengan API key Google Places yang valid
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.status === 'OK' && data.results) {
+          // Transform Google Places data ke format yang dibutuhkan
+          const transformedWorkshops = data.results.map((place, index) => ({
+            id: place.place_id || index + 1,
+            name: place.name || 'Workshop Tidak Dikenal',
+            address: place.vicinity || place.formatted_address || 'Alamat tidak tersedia',
+            distance: calculateDistance(lat, lng, place.geometry.location.lat, place.geometry.location.lng),
+            rating: place.rating || 0,
+            phone: place.formatted_phone_number || 'Tidak tersedia',
+            services: place.types?.filter(type => 
+              ['car_repair', 'car_dealer', 'car_wash', 'gas_station'].includes(type)
+            ).map(type => type.replace('_', ' ').toUpperCase()) || ['Service Umum'],
+            price: getPriceRange(place.price_level),
+            open: place.opening_hours?.open_now ? 'Buka Sekarang' : 'Tutup/Tidak Diketahui',
+            position: { x: 30 + (index * 20), y: 25 + (index * 25) },
+            lat: place.geometry.location.lat,
+            lng: place.geometry.location.lng,
+            color: getMarkerColor(index),
+            photo: place.photos?.[0]?.photo_reference || null
+          }));
+          
+          setBengkelData(transformedWorkshops);
+        } else {
+          // Fallback ke dummy data jika API gagal
+          console.warn('Google Places API tidak mengembalikan hasil, menggunakan dummy data');
+          setBengkelData(getDummyWorkshops());
+        }
+      } catch (error) {
+        console.error('Error fetching workshops from Google Places:', error);
+        setWorkshopsError(error.message);
+        // Fallback ke dummy data jika terjadi error
+        setBengkelData(getDummyWorkshops());
+      } finally {
+        setIsLoadingWorkshops(false);
+      }
+    };
+
+    // Helper function untuk menghitung jarak
+    const calculateDistance = (lat1, lng1, lat2, lng2) => {
+      const R = 6371; // Radius bumi dalam km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const distance = R * c;
+      return `${distance.toFixed(1)} km`;
+    };
+
+    // Helper function untuk warna marker
+    const getMarkerColor = (index) => {
+      const colors = ['red', 'blue', 'purple', 'green', 'orange', 'yellow'];
+      return colors[index % colors.length];
+    };
+
+    // Helper function untuk price range
+    const getPriceRange = (priceLevel) => {
+      switch(priceLevel) {
+        case 1: return 'Rp 25-75k';
+        case 2: return 'Rp 50-150k';
+        case 3: return 'Rp 100-300k';
+        case 4: return 'Rp 200-500k';
+        default: return 'Harga bervariasi';
+      }
+    };
+
+    // Dummy data sebagai fallback
+    const getDummyWorkshops = () => [
+      {
+        id: 1,
+        name: 'Bengkel Jaya Motor',
+        distance: '0.5 km',
+        rating: 4.5,
+        address: 'Jl. Raya Utama No. 123',
+        phone: '021-1234-5678',
+        services: ['Service Rutin', 'Ganti Oli', 'Perbaikan Mesin'],
+        price: 'Rp 50-150k',
+        open: '08:00 - 20:00',
+        position: { x: 30, y: 25 }
+      },
+      {
+        id: 2,
+        name: 'Honda AHASS Sentral',
+        distance: '1.2 km',
+        rating: 4.8,
+        address: 'Jl. Ahmad Yani No. 456',
+        phone: '021-2345-6789',
+        services: ['Service Resmi Honda', 'Spare Part Original', 'Garansi Resmi'],
+        price: 'Rp 100-300k',
+        open: '08:00 - 17:00',
+        position: { x: 65, y: 50 }
+      },
+      {
+        id: 3,
+        name: 'Yamaha Service Center',
+        distance: '1.8 km',
+        rating: 4.6,
+        address: 'Jl. Sudirman No. 789',
+        phone: '021-3456-7890',
+        services: ['Service Yamaha', 'Tune Up', 'Injeksi Cleaning'],
+        price: 'Rp 75-250k',
+        open: '08:00 - 18:00',
+        position: { x: 45, y: 70 }
+      }
+    ];
+
+    // Load workshops saat komponen dimount
+    useEffect(() => {
+      fetchWorkshopsFromGooglePlaces();
+    }, []);
+
+    // Handle mouse events for dragging
+    const handleMouseDown = (e) => {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - mapPosition.x,
+        y: e.clientY - mapPosition.y
+      });
+    };
+
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      setMapPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    // Handle zoom
+    const handleZoom = (direction) => {
+      setZoomLevel(prev => {
+        const newZoom = direction === 'in' ? prev * 1.2 : prev / 1.2;
+        return Math.max(0.5, Math.min(3, newZoom));
+      });
+    };
+
+    // Handle wheel zoom
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const direction = e.deltaY > 0 ? 'out' : 'in';
+      handleZoom(direction);
+    };
+
+    // Reset map position and zoom
+    const resetMap = () => {
+      setZoomLevel(1);
+      setMapPosition({ x: 0, y: 0 });
+    };
+
+    useEffect(() => {
+      const handleGlobalMouseMove = (e) => handleMouseMove(e);
+      const handleGlobalMouseUp = () => handleMouseUp();
+
+      if (isDragging) {
+        document.addEventListener('mousemove', handleGlobalMouseMove);
+        document.addEventListener('mouseup', handleGlobalMouseUp);
+      }
+
+      return () => {
+        document.removeEventListener('mousemove', handleGlobalMouseMove);
+        document.removeEventListener('mouseup', handleGlobalMouseUp);
+      };
+    }, [isDragging, dragStart]);
     
-    // Masalah Suara
-    'suara kasar': {
-      response: '🔊 **Diagnosa: Suara Mesin Abnormal**\n\nKemungkinan penyebab:\n• Rantai keteng kendor (40%)\n• Klep perlu stel (35%)\n• Bearing aus (25%)\n\n💰 **Estimasi Biaya:**\n• Stel rantai keteng: Rp 50-75k\n• Stel klep: Rp 75-125k\n• Ganti bearing: Rp 200-400k\n\n👂 **Identifikasi Suara:**\n• Tek-tek-tek: Klep\n• Ngung-ngung: Bearing\n• Krek-krek: Rantai',
-      urgency: 'medium',
-      category: 'mesin'
-    },
-    
-    // Default response
-    'default': {
-      response: '🤖 **Analisis Gejala Motor**\n\nTerima kasih sudah menceritakan masalah motor Anda. Untuk memberikan diagnosa yang lebih akurat, bisa tolong jelaskan:\n\n📝 **Detail yang dibutuhkan:**\n• Kapan masalah mulai terjadi?\n• Suara apa yang terdengar?\n• Apakah ada asap? Warna apa?\n• Sudah berapa lama tidak service?\n\n💡 **Atau coba kata kunci:**\n"susah hidup", "asap putih", "rem blong", "oli bocor", "mesin kasar"\n\n📞 **Estimasi pemeriksaan umum: Rp 50-100 ribu**',
-      urgency: 'low',
-      category: 'general'
-    }
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-semibold">🗺️ Peta Bengkel Terdekat</h3>
+              <button 
+                onClick={() => fetchWorkshopsFromGooglePlaces()}
+                disabled={isLoadingWorkshops}
+                className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoadingWorkshops ? '🔄 Loading...' : '🔄 Refresh'}
+              </button>
+            </div>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+          
+          {/* Status and Error Messages */}
+          <div className="px-4 py-2 border-b bg-gray-50">
+            <p className="text-sm text-gray-600">
+              {isLoadingWorkshops ? '🔄 Mengambil data bengkel dari Google Maps...' : '💡 Klik marker untuk melihat detail bengkel'}
+            </p>
+            {workshopsError && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mt-2 text-sm">
+                ⚠️ Error: {workshopsError} (Menggunakan data dummy)
+              </div>
+            )}
+          </div>
+          
+          <div className="flex flex-col lg:flex-row h-96">
+            {/* Map Area */}
+            <div className="flex-1 bg-gradient-to-br from-blue-100 to-green-100 relative overflow-hidden">
+              {/* Google Maps Embed */}
+              <div className="w-full h-full relative">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31731.02663282229!2d106.79249!3d-6.2088!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f3e945e34b9d%3A0x5371bf0fdad786a2!2sJakarta%2C%20Daerah%20Khusus%20Ibukota%20Jakarta!5e0!3m2!1sen!2sid!4v1699999999999!5m2!1sen!2sid"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="absolute inset-0"
+                ></iframe>
+                
+                {/* Custom Markers Overlay */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {bengkelData.map((bengkel, index) => (
+                    <div
+                      key={bengkel.id}
+                      className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition-transform z-20 pointer-events-auto"
+                      style={{
+                        left: `${bengkel.position.x}%`,
+                        top: `${bengkel.position.y}%`
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedBengkel(bengkel);
+                      }}
+                    >
+                      <div className={`relative ${
+                        selectedBengkel?.id === bengkel.id ? 'animate-pulse' : 'animate-bounce'
+                      }`}>
+                        <div className={`${
+                          selectedBengkel?.id === bengkel.id 
+                            ? 'bg-green-500 ring-4 ring-green-200 scale-125' 
+                            : index === 0 ? 'bg-red-500' : index === 1 ? 'bg-blue-500' : 'bg-purple-500'
+                        } text-white rounded-full w-12 h-12 flex items-center justify-center text-lg font-bold shadow-xl transition-all duration-200 border-3 border-white`}>
+                          🏪
+                        </div>
+                        {/* Marker Label */}
+                        <div className="absolute top-14 left-1/2 transform -translate-x-1/2 bg-white bg-opacity-95 px-3 py-2 rounded-lg text-sm font-medium shadow-xl whitespace-nowrap border-2 border-gray-200">
+                          <div className="font-bold text-gray-800">{bengkel.name}</div>
+                          <div className="text-gray-600 text-xs">{bengkel.distance}</div>
+                          <div className="flex items-center mt-1">
+                            <span className="text-yellow-500 text-xs">⭐</span>
+                            <span className="text-xs ml-1 font-medium">{bengkel.rating}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Map Controls Overlay */}
+                <div className="absolute top-4 right-4 z-30 bg-white rounded-lg shadow-lg p-3">
+                  <div className="text-sm font-bold text-gray-800 mb-2">🗺️ Google Maps</div>
+                  <div className="text-xs text-gray-600">Klik marker untuk detail</div>
+                </div>
+                
+                {/* Map Legend */}
+                <div className="absolute bottom-4 left-4 bg-white p-4 rounded-lg shadow-xl text-sm z-30 border-2 border-gray-200">
+                  <div className="font-bold mb-3 text-gray-800">📍 Bengkel Terdekat</div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 bg-red-500 rounded-full shadow-sm"></div>
+                      <span className="text-gray-700">Bengkel Jaya Motor</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 bg-blue-500 rounded-full shadow-sm"></div>
+                      <span className="text-gray-700">Honda AHASS Sentral</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 bg-purple-500 rounded-full shadow-sm"></div>
+                      <span className="text-gray-700">Yamaha Service Center</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Bengkel List */}
+            <div className="w-full lg:w-80 border-l overflow-y-auto">
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold">📋 Daftar Bengkel</h4>
+                  <div className="flex items-center gap-2">
+                    {isLoadingWorkshops && (
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                    <span className="text-xs text-gray-500">{bengkelData.length} bengkel</span>
+                  </div>
+                </div>
+                {bengkelData.map((bengkel, index) => (
+                  <div 
+                    key={bengkel.id}
+                    className={`p-3 border rounded-lg mb-2 cursor-pointer transition-all duration-200 ${
+                      selectedBengkel?.id === bengkel.id ? 'bg-blue-50 border-blue-300 shadow-md' : 'hover:bg-gray-50 hover:shadow-sm'
+                    }`}
+                    onClick={() => setSelectedBengkel(bengkel)}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${
+                          index === 0 ? 'bg-red-500' : index === 1 ? 'bg-blue-500' : 'bg-purple-500'
+                        }`}></div>
+                        <h5 className="font-medium text-sm">{bengkel.name}</h5>
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium">{bengkel.distance}</span>
+                    </div>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center">
+                        <span className="text-yellow-400 text-sm">⭐</span>
+                        <span className="text-xs text-gray-600 ml-1 font-medium">{bengkel.rating}</span>
+                      </div>
+                      <span className="text-xs text-green-600 font-medium">{bengkel.price}</span>
+                    </div>
+                    
+                    {selectedBengkel?.id === bengkel.id && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 animate-fadeIn">
+                        <div className="space-y-2 mb-3">
+                          <p className="text-xs text-gray-600 flex items-start gap-2">
+                            <span>📍</span>
+                            <span>{bengkel.address}</span>
+                          </p>
+                          <p className="text-xs text-gray-600 flex items-center gap-2">
+                            <span>📞</span>
+                            <span>{bengkel.phone}</span>
+                          </p>
+                          <p className="text-xs text-gray-600 flex items-center gap-2">
+                            <span>🕒</span>
+                            <span>{bengkel.open}</span>
+                          </p>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <p className="text-xs font-medium text-gray-700 mb-2">🔧 Layanan:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {bengkel.services.map((service, idx) => (
+                              <span key={idx} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                                {service}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                          <button className="bg-blue-500 text-white text-xs py-2 px-3 rounded-md hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center gap-1">
+                            📞 Hubungi
+                          </button>
+                          <button className="bg-green-500 text-white text-xs py-2 px-3 rounded-md hover:bg-green-600 transition-colors duration-200 flex items-center justify-center gap-1">
+                            🗺️ Rute
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                
+                {!selectedBengkel && (
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-700 text-center">
+                      💡 Klik marker di peta atau pilih bengkel di atas untuk melihat detail
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Selected Bengkel Details */}
+          {selectedBengkel && (
+            <div className="border-t p-4 bg-gray-50">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h4 className="font-semibold">{selectedBengkel.name}</h4>
+                  <p className="text-sm text-gray-600">{selectedBengkel.address}</p>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center">
+                    <span className="text-yellow-400">⭐</span>
+                    <span className="text-sm ml-1">{selectedBengkel.rating}</span>
+                  </div>
+                  <p className="text-sm text-gray-600">{selectedBengkel.distance}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="font-medium">📞 Kontak:</p>
+                  <p className="text-gray-600">{selectedBengkel.phone}</p>
+                </div>
+                <div>
+                  <p className="font-medium">🕒 Jam Buka:</p>
+                  <p className="text-gray-600">{selectedBengkel.open}</p>
+                </div>
+                <div>
+                  <p className="font-medium">💰 Harga:</p>
+                  <p className="text-gray-600">{selectedBengkel.price}</p>
+                </div>
+              </div>
+              
+              <div className="mt-3">
+                <p className="font-medium text-sm mb-1">🛠️ Layanan:</p>
+                <div className="flex flex-wrap gap-1">
+                  {selectedBengkel.services.map((service, index) => (
+                    <span key={index} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                      {service}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex gap-2 mt-3">
+                <button className="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600">
+                  📞 Hubungi
+                </button>
+                <button className="bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600">
+                  🗺️ Navigasi
+                </button>
+                <button className="bg-orange-500 text-white px-4 py-2 rounded text-sm hover:bg-orange-600">
+                  📅 Booking
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const quickActions = [
@@ -174,6 +624,19 @@ export default function Chat() {
     inputRef.current?.focus();
   }, []);
 
+  // Function to render text with bold formatting
+  const renderFormattedText = (text) => {
+    if (!text) return text;
+    
+    const parts = text.split(/\*\*(.*?)\*\*/g);
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        return <strong key={index} className="font-bold">{part}</strong>;
+      }
+      return part;
+    });
+  };
+
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
@@ -193,34 +656,33 @@ export default function Chat() {
     const responseTime = Math.random() * 2000 + 800; // 0.8-2.8 seconds for realism
     
     setTimeout(() => {
-      const messageText = inputMessage.toLowerCase();
-      let responseData = aiResponses.default;
-      
-      // Enhanced keyword matching for demo
-      Object.keys(aiResponses).forEach(keyword => {
-        if (messageText.includes(keyword) && keyword !== 'default') {
-          responseData = aiResponses[keyword];
-        }
-      });
+      const aiResponse = generateAIResponse(inputMessage);
       
       // Add processing time indicator for complex issues
-      const processingNote = responseData.urgency === 'critical' 
+      const processingNote = aiResponse.urgency === 'critical' 
         ? '⚡ Analisis Prioritas Tinggi' 
-        : responseData.category === 'mesin' 
+        : aiResponse.category === 'mesin' 
         ? '🔧 Analisis Sistem Mesin' 
         : '🤖 Analisis AI Standard';
       
       const botMessage = {
         id: Date.now() + 1,
         type: 'bot',
-        content: responseData.response,
-        urgency: responseData.urgency,
-        category: responseData.category,
+        content: aiResponse.text,
+        urgency: aiResponse.urgency,
+        category: aiResponse.category,
         timestamp: new Date(),
-        source: `${processingNote} (${Math.floor(Math.random() * 5) + 95}% akurasi)`
+        source: `${processingNote} (${Math.floor(Math.random() * 5) + 95}% akurasi)`,
+        showMap: aiResponse.showMap
       };
 
       setMessages(prev => [...prev, botMessage]);
+      
+      // Show map if location-related
+      if (aiResponse.showMap) {
+        setShowMap(true);
+      }
+      
       setIsTyping(false);
       setIsLoading(false);
     }, responseTime);
@@ -254,35 +716,39 @@ export default function Chat() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Interactive Map Modal */}
+      {showMap && <InteractiveMap onClose={() => setShowMap(false)} />}
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-4">
+      <header className="bg-white shadow-sm border-b border-gray-200 px-3 sm:px-4 py-3 sm:py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center mr-6 hover:opacity-80 transition-opacity">
-              <div className="bg-teal-500 p-2 rounded-lg mr-3">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center flex-1 min-w-0">
+            <Link to="/" className="flex items-center mr-3 sm:mr-6 hover:opacity-80 transition-opacity flex-shrink-0">
+              <div className="bg-teal-500 p-1.5 sm:p-2 rounded-lg mr-2 sm:mr-3">
+                <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
               </div>
-              <span className="text-xl font-bold text-gray-800">BengkelAI</span>
+              <span className="text-lg sm:text-xl font-bold text-gray-800">BengkelAI</span>
             </Link>
-            <div className="flex items-center">
-              <div className={`w-2 h-2 rounded-full mr-2 ${
+            <div className="flex items-center min-w-0 flex-1">
+              <div className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 ${
                 isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
               }`}></div>
-              <span className="text-sm text-gray-600">
+              <span className="text-xs sm:text-sm text-gray-600 truncate">
                 {isConnected ? 'Real-time Connected' : 'Reconnecting...'}
               </span>
               {isTyping && (
-                <span className="ml-3 text-xs text-blue-600 flex items-center">
+                <span className="ml-2 sm:ml-3 text-xs text-blue-600 flex items-center flex-shrink-0">
                   <span className="mr-1">🤖</span>
-                  <span>Analyzing{typingDots}</span>
+                  <span className="hidden sm:inline">Analyzing{typingDots}</span>
+                  <span className="sm:hidden">AI{typingDots}</span>
                 </span>
               )}
             </div>
           </div>
-          <div className="text-sm text-gray-500">
-            Konsultasi Gratis
+          <div className="text-xs sm:text-sm text-gray-500 flex-shrink-0 ml-2">
+            <span className="hidden sm:inline">Konsultasi Gratis</span>
+            <span className="sm:hidden">Gratis</span>
           </div>
         </div>
       </header>
@@ -290,7 +756,7 @@ export default function Chat() {
       {/* Chat Container */}
       <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 space-y-3 sm:space-y-4">
           {messages.map((message) => {
             const getUrgencyColor = (urgency) => {
               switch(urgency) {
@@ -314,11 +780,11 @@ export default function Chat() {
             
             return (
               <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs lg:max-w-md xl:max-w-lg ${
+                <div className={`max-w-[85%] sm:max-w-xs lg:max-w-md xl:max-w-lg ${
                   message.type === 'user' 
                     ? 'bg-teal-500 text-white rounded-2xl rounded-br-md' 
                     : `${getUrgencyColor(message.urgency)} text-gray-800 rounded-2xl rounded-bl-md shadow-sm border border-gray-100`
-                } px-4 py-3`}>
+                } px-3 sm:px-4 py-2 sm:py-3`}>
                   {message.type === 'bot' && (
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center">
@@ -343,7 +809,19 @@ export default function Chat() {
                       )}
                     </div>
                   )}
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{renderFormattedText(message.content)}</p>
+                  
+                  {/* Show Map Button for location-related messages */}
+                  {message.showMap && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <button 
+                        onClick={() => setShowMap(true)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                      >
+                        🗺️ Lihat Peta Interaktif
+                      </button>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mt-2 text-xs opacity-70">
                     <span>{message.timestamp.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
                     {message.type === 'user' && message.source && (
@@ -387,24 +865,25 @@ export default function Chat() {
         </div>
 
         {/* Quick Actions */}
-        <div className="px-4 py-2">
-          <div className="flex flex-wrap gap-2 justify-center mb-3">
+        <div className="px-3 sm:px-4 py-2">
+          <div className="flex flex-wrap gap-1 sm:gap-2 justify-center mb-3">
             {quickActions.map((action, index) => (
               <button
                 key={index}
                 onClick={() => handleQuickAction(action.action)}
-                className="bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-full text-sm border border-gray-200 transition-colors duration-200 hover:border-teal-300"
+                className="bg-white hover:bg-gray-50 text-gray-700 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm border border-gray-200 transition-colors duration-200 hover:border-teal-300"
               >
-                {action.text}
+                <span className="hidden sm:inline">{action.text}</span>
+                <span className="sm:hidden">{action.text.split(' ')[0]}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Quick Suggestions */}
-        <div className="px-4 py-3 bg-gray-50 border-t">
+        <div className="px-3 sm:px-4 py-3 bg-gray-50 border-t">
           <p className="text-xs text-gray-600 mb-2">💡 Coba tanyakan masalah motor Anda:</p>
-          <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
             {[
               { text: '🔋 Motor susah hidup', query: 'susah hidup', category: 'Starter' },
               { text: '💨 Asap putih keluar', query: 'asap putih', category: 'Mesin' },
@@ -454,37 +933,37 @@ export default function Chat() {
         </div>
 
         {/* Input Area */}
-        <div className="bg-white border-t border-gray-200 px-4 py-4">
-          <div className="flex items-end space-x-3">
+        <div className="bg-white border-t border-gray-200 px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-end space-x-2 sm:space-x-3">
             <div className="flex-1">
               <textarea
                 ref={inputRef}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ketik gejala motor Anda... (contoh: 'motor susah hidup pagi hari')"
-                className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                placeholder="Ketik gejala motor Anda..."
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-sm"
                 rows={1}
-                style={{ minHeight: '48px', maxHeight: '120px' }}
+                style={{ minHeight: '44px', maxHeight: '120px' }}
                 disabled={isLoading}
               />
             </div>
             <Button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
-              className={`px-6 py-3 rounded-2xl font-semibold transition-all duration-200 ${
+              className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-semibold transition-all duration-200 min-w-[60px] sm:min-w-[80px] ${
                 !inputMessage.trim() || isLoading
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-teal-500 hover:bg-teal-600 text-white hover:scale-105 transform'
               }`}
             >
               {isLoading ? (
-                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               ) : (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                 </svg>
               )}
