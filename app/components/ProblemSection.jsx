@@ -77,10 +77,10 @@ export default function ProblemSection() {
           {problems.map((problem, index) => (
             <div 
               key={index}
-              className="group relative"
+              className="group relative h-full"
             >
               {/* Glass Card */}
-              <div className="relative backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl hover:shadow-red-500/25 transition-all duration-500 hover:-translate-y-2 overflow-hidden">
+              <div className="relative backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl hover:shadow-red-500/25 transition-all duration-500 hover:-translate-y-2 overflow-hidden h-full flex flex-col">
                 {/* Glass highlight effect */}
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
                 
@@ -91,7 +91,7 @@ export default function ProblemSection() {
                 <div className={`absolute inset-0 bg-gradient-to-r ${problem.borderGradient} rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl`} />
                 
                 {/* Content */}
-                <div className="relative z-10 text-center">
+                <div className="relative z-10 text-center flex flex-col h-full">
                   {/* Icon */}
                   <div className="relative mb-6">
                     <div className={`w-20 h-20 bg-gradient-to-br ${problem.iconBg} rounded-2xl flex items-center justify-center mx-auto shadow-lg group-hover:scale-110 transition-transform duration-300`}>
@@ -112,7 +112,7 @@ export default function ProblemSection() {
                   </h3>
                   
                   {/* Description */}
-                  <p className="text-sm sm:text-base text-white/80 leading-relaxed group-hover:text-white/90 transition-colors duration-300">
+                  <p className="text-sm sm:text-base text-white/80 leading-relaxed group-hover:text-white/90 transition-colors duration-300 flex-grow">
                     {problem.description}
                   </p>
                 </div>

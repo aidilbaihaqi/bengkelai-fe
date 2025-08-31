@@ -59,17 +59,7 @@ export const meta = () => {
 };
 
 export default function Chat() {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      type: 'bot',
-      content: 'Halo! Saya BengkelAI, asisten AI untuk motor Anda. Ceritakan masalah yang dialami motor Anda, dan saya akan membantu mendiagnosa serta memberikan solusi terbaik. 🚲⚡\n\n🔄 **Status:** Real-time AI Analysis Ready',
-      timestamp: new Date(),
-      source: 'BengkelAI v1.0',
-      urgency: 'low',
-      category: 'system'
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,6 +68,11 @@ export default function Chat() {
   const [showMap, setShowMap] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const headerRef = useRef(null);
+  const footerRef = useRef(null);
+  const [footerH, setFooterH] = useState(120);
+  const messagesScrollRef = useRef(null);
+  const textareaRef = useRef(null);
 
   // AI Response using new dataset
   const generateAIResponse = (message) => {
@@ -168,7 +163,8 @@ export default function Chat() {
         }
       } catch (error) {
         console.error('Error fetching workshops from Google Places:', error);
-        setWorkshopsError(error.message);
+        // Tidak menampilkan error, langsung gunakan dummy data
+        setWorkshopsError(null);
         // Fallback ke dummy data jika terjadi error
         setBengkelData(getDummyWorkshops());
       } finally {
@@ -309,40 +305,36 @@ export default function Chat() {
     }, [isDragging, dragStart]);
     
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-          <div className="flex justify-between items-center p-4 border-b">
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 backdrop-blur-xl border border-cyan-500/20 ring-1 ring-white/10 rounded-lg max-w-7xl w-full max-h-[95vh] overflow-hidden shadow-2xl">
+          <div className="flex justify-between items-center p-4 border-b border-cyan-500/20">
             <div className="flex items-center gap-3">
-              <h3 className="text-lg font-semibold">🗺️ Peta Bengkel Terdekat</h3>
+              <h3 className="text-lg font-semibold text-white">🗺️ Peta Bengkel Terdekat</h3>
               <button 
                 onClick={() => fetchWorkshopsFromGooglePlaces()}
                 disabled={isLoadingWorkshops}
-                className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded text-sm hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ring-1 ring-white/20"
               >
                 {isLoadingWorkshops ? '🔄 Loading...' : '🔄 Refresh'}
               </button>
             </div>
             <button 
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+              className="text-gray-400 hover:text-white text-xl font-bold transition-colors duration-200 hover:bg-slate-700/50 rounded-full w-8 h-8 flex items-center justify-center"
             >
               ×
             </button>
           </div>
           
           {/* Status and Error Messages */}
-          <div className="px-4 py-2 border-b bg-gray-50">
-            <p className="text-sm text-gray-600">
+          <div className="px-4 py-2 border-b border-cyan-500/20 bg-slate-800/50">
+            <p className="text-sm text-cyan-300/80">
               {isLoadingWorkshops ? '🔄 Mengambil data bengkel dari Google Maps...' : '💡 Klik marker untuk melihat detail bengkel'}
             </p>
-            {workshopsError && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mt-2 text-sm">
-                ⚠️ Error: {workshopsError} (Menggunakan data dummy)
-              </div>
-            )}
+            {/* Removed error display - always show dummy data seamlessly */}
           </div>
           
-          <div className="flex flex-col lg:flex-row h-96">
+          <div className="flex flex-col lg:flex-row h-[500px] lg:h-[600px]">
             {/* Map Area */}
             <div className="flex-1 bg-gradient-to-br from-blue-100 to-green-100 relative overflow-hidden">
               {/* Google Maps Embed */}
@@ -425,22 +417,22 @@ export default function Chat() {
             </div>
             
             {/* Bengkel List */}
-            <div className="w-full lg:w-80 border-l overflow-y-auto">
+            <div className="w-full lg:w-96 border-l border-cyan-500/20 overflow-y-auto bg-slate-800/30">
               <div className="p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold">📋 Daftar Bengkel</h4>
+                  <h4 className="font-semibold text-white">📋 Daftar Bengkel</h4>
                   <div className="flex items-center gap-2">
                     {isLoadingWorkshops && (
-                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
                     )}
-                    <span className="text-xs text-gray-500">{bengkelData.length} bengkel</span>
+                    <span className="text-xs text-cyan-300/80">{bengkelData.length} bengkel</span>
                   </div>
                 </div>
                 {bengkelData.map((bengkel, index) => (
                   <div 
                     key={bengkel.id}
                     className={`p-3 border rounded-lg mb-2 cursor-pointer transition-all duration-200 ${
-                      selectedBengkel?.id === bengkel.id ? 'bg-blue-50 border-blue-300 shadow-md' : 'hover:bg-gray-50 hover:shadow-sm'
+                      selectedBengkel?.id === bengkel.id ? 'bg-gradient-to-br from-cyan-900/40 via-blue-900/30 to-cyan-900/40 border-cyan-400/50 shadow-lg ring-1 ring-cyan-400/30' : 'bg-slate-700/30 border-slate-600/50 hover:bg-slate-600/40 hover:border-cyan-500/30 hover:shadow-sm'
                     }`}
                     onClick={() => setSelectedBengkel(bengkel)}
                   >
@@ -449,40 +441,40 @@ export default function Chat() {
                         <div className={`w-3 h-3 rounded-full ${
                           index === 0 ? 'bg-red-500' : index === 1 ? 'bg-blue-500' : 'bg-purple-500'
                         }`}></div>
-                        <h5 className="font-medium text-sm">{bengkel.name}</h5>
+                        <h5 className="font-medium text-sm text-white">{bengkel.name}</h5>
                       </div>
-                      <span className="text-xs text-gray-500 font-medium">{bengkel.distance}</span>
+                      <span className="text-xs text-cyan-300/80 font-medium">{bengkel.distance}</span>
                     </div>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center">
                         <span className="text-yellow-400 text-sm">⭐</span>
-                        <span className="text-xs text-gray-600 ml-1 font-medium">{bengkel.rating}</span>
+                        <span className="text-xs text-gray-300 ml-1 font-medium">{bengkel.rating}</span>
                       </div>
-                      <span className="text-xs text-green-600 font-medium">{bengkel.price}</span>
+                      <span className="text-xs text-green-400 font-medium">{bengkel.price}</span>
                     </div>
                     
                     {selectedBengkel?.id === bengkel.id && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 animate-fadeIn">
+                      <div className="mt-3 pt-3 border-t border-cyan-500/20 animate-fadeIn">
                         <div className="space-y-2 mb-3">
-                          <p className="text-xs text-gray-600 flex items-start gap-2">
+                          <p className="text-xs text-gray-300 flex items-start gap-2">
                             <span>📍</span>
                             <span>{bengkel.address}</span>
                           </p>
-                          <p className="text-xs text-gray-600 flex items-center gap-2">
+                          <p className="text-xs text-gray-300 flex items-center gap-2">
                             <span>📞</span>
                             <span>{bengkel.phone}</span>
                           </p>
-                          <p className="text-xs text-gray-600 flex items-center gap-2">
+                          <p className="text-xs text-gray-300 flex items-center gap-2">
                             <span>🕒</span>
                             <span>{bengkel.open}</span>
                           </p>
                         </div>
                         
                         <div className="mb-3">
-                          <p className="text-xs font-medium text-gray-700 mb-2">🔧 Layanan:</p>
+                          <p className="text-xs font-medium text-cyan-300 mb-2">🔧 Layanan:</p>
                           <div className="flex flex-wrap gap-1">
                             {bengkel.services.map((service, idx) => (
-                              <span key={idx} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                              <span key={idx} className="text-xs bg-cyan-900/40 text-cyan-300 px-2 py-1 rounded-full border border-cyan-500/30">
                                 {service}
                               </span>
                             ))}
@@ -490,10 +482,10 @@ export default function Chat() {
                         </div>
                         
                         <div className="grid grid-cols-2 gap-2">
-                          <button className="bg-blue-500 text-white text-xs py-2 px-3 rounded-md hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center gap-1">
+                          <button className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs py-2 px-3 rounded-md hover:from-cyan-400 hover:to-blue-500 transition-all duration-200 flex items-center justify-center gap-1 ring-1 ring-white/20">
                             📞 Hubungi
                           </button>
-                          <button className="bg-green-500 text-white text-xs py-2 px-3 rounded-md hover:bg-green-600 transition-colors duration-200 flex items-center justify-center gap-1">
+                          <button className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs py-2 px-3 rounded-md hover:from-green-400 hover:to-emerald-500 transition-all duration-200 flex items-center justify-center gap-1 ring-1 ring-white/20">
                             🗺️ Rute
                           </button>
                         </div>
@@ -503,8 +495,8 @@ export default function Chat() {
                 ))}
                 
                 {!selectedBengkel && (
-                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-700 text-center">
+                  <div className="mt-4 p-3 bg-cyan-900/20 border border-cyan-500/30 rounded-lg backdrop-blur-sm">
+                    <p className="text-xs text-cyan-300 text-center">
                       💡 Klik marker di peta atau pilih bengkel di atas untuk melihat detail
                     </p>
                   </div>
@@ -575,10 +567,10 @@ export default function Chat() {
   };
 
   const quickActions = [
-    { text: '🔍 Booking Bengkel', action: 'booking' },
-    { text: '💰 Lihat Estimasi Biaya', action: 'estimate' },
-    { text: '🔄 Ulangi Diagnosa', action: 'restart' },
-    { text: '📋 Riwayat Chat', action: 'history' }
+    { text: 'Booking Bengkel', action: 'booking' },
+    { text: 'Lihat Estimasi Biaya', action: 'estimate' },
+    { text: 'Ulangi Diagnosa', action: 'restart' },
+    { text: 'Riwayat Chat', action: 'history' }
   ];
 
   // Enhanced auto scroll with animation timing
@@ -592,6 +584,19 @@ export default function Chat() {
     }, 100);
     return () => clearTimeout(timer);
   };
+
+  // Initialize welcome message after component mount
+  useEffect(() => {
+    setMessages([{
+      id: 1,
+      type: 'bot',
+      content: 'Halo! Saya BengkelAI, asisten AI untuk motor Anda. Ceritakan masalah yang dialami motor Anda, dan saya akan membantu mendiagnosa serta memberikan solusi terbaik. 🚲⚡\n\n🔄 **Status:** Real-time AI Analysis Ready',
+      timestamp: new Date(),
+      source: 'BengkelAI v1.0',
+      urgency: 'low',
+      category: 'system'
+    }]);
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -646,6 +651,26 @@ export default function Chat() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // hitung tinggi header/footer -> set padding messages
+  useEffect(() => {
+    const update = () => setFooterH(footerRef.current?.offsetHeight ?? 120);
+    update();
+    const ro = new ResizeObserver(update);
+    footerRef.current && ro.observe(footerRef.current);
+    window.addEventListener('resize', update);
+    return () => { window.removeEventListener('resize', update); ro.disconnect(); };
+  }, []);
+
+  // auto-resize textarea
+  const onInputChange = (e) => {
+    setInputMessage(e.target.value);
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = '0px';
+      el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+    }
+  };
 
   // Function to render text with bold formatting
   const renderFormattedText = (text) => {
@@ -738,7 +763,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col relative">
       {/* Background Elements */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
@@ -759,6 +784,11 @@ export default function Chat() {
               </div>
               <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">BengkelAI</span>
             </Link>
+            <nav className="hidden md:flex items-center space-x-4">
+              <a href="/dashboard" className="text-cyan-300 hover:text-cyan-100 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-white/10">
+                Dashboard
+              </a>
+            </nav>
             <div className="flex items-center min-w-0 flex-1">
               <div className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 ${
                 isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
@@ -783,9 +813,31 @@ export default function Chat() {
       </header>
 
       {/* Chat Container */}
-      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full relative z-10">
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 space-y-3 sm:space-y-4">
+      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full relative z-10 min-h-0">
+        {/* Messages Area - Scrollable */}
+        <div 
+          ref={messagesScrollRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 pt-4 sm:pt-6 space-y-3 sm:space-y-4 scrollbar-thin scrollbar-thumb-cyan-500/20 scrollbar-track-transparent"
+          style={{
+            height: 'calc(100dvh - 0px)',
+            paddingBottom: `calc(${footerH}px + env(safe-area-inset-bottom, 0px))`
+          }}
+        >
+          <style>{`
+            .scrollbar-thin::-webkit-scrollbar {
+              width: 6px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb {
+              background: rgba(6, 182, 212, 0.2);
+              border-radius: 3px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+              background: rgba(6, 182, 212, 0.4);
+            }
+          `}</style>
           {messages.map((message, index) => {
             const getUrgencyColor = (urgency) => {
               switch(urgency) {
@@ -904,12 +956,12 @@ export default function Chat() {
                       <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                     </div>
                     <span className="text-xs text-cyan-300/80 ml-2">
-                      🔍 Menganalisis gejala{typingDots}
+                      Menganalisis gejala{typingDots}
                     </span>
                   </div>
                 </div>
                 <div className="mt-2 text-xs text-white/60">
-                  💡 Memproses data dari 1000+ kasus serupa...
+                  Memproses data dari 1000+ kasus serupa...
                 </div>
               </div>
             </div>
@@ -918,87 +970,90 @@ export default function Chat() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick Actions */}
-        <div className="px-3 sm:px-4 py-2">
-          <div className="flex flex-wrap gap-1 sm:gap-2 justify-center mb-3">
-            {quickActions.map((action, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickAction(action.action)}
-                className="backdrop-blur-xl bg-slate-800/40 hover:bg-slate-700/60 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm border border-cyan-500/20 transition-all duration-200 hover:border-cyan-400/40 hover:shadow-lg ring-1 ring-white/10"
-              >
-                <span className="hidden sm:inline">{action.text}</span>
-                <span className="sm:hidden">{action.text.split(' ')[0]}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Quick Suggestions */}
-        <div className="px-3 sm:px-4 py-3 backdrop-blur-xl bg-gradient-to-r from-slate-900/60 via-slate-800/40 to-slate-900/60 border-t border-cyan-500/20 ring-1 ring-white/5">
-          <p className="text-xs text-cyan-300/80 mb-2">💡 Coba tanyakan masalah motor Anda:</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
-            {[
-              { text: '🔋 Motor susah hidup', query: 'susah hidup', category: 'Starter' },
-              { text: '💨 Asap putih keluar', query: 'asap putih', category: 'Mesin' },
-              { text: '🛑 Rem tidak pakem', query: 'rem blong', category: 'Rem' },
-              { text: '🛢️ Oli bocor', query: 'oli bocor', category: 'Pelumasan' },
-              { text: '🔧 Mesin kasar', query: 'mesin kasar', category: 'Mesin' },
-              { text: '⚙️ Gigi susah masuk', query: 'gigi susah masuk', category: 'Transmisi' }
-            ].map((suggestion) => (
-              <button
-                key={suggestion.query}
-                onClick={() => {
-                  setInputMessage(suggestion.query);
-                  setTimeout(() => handleSendMessage(), 100);
-                }}
-                className="px-3 py-2 backdrop-blur-xl bg-slate-800/40 border border-cyan-500/20 rounded-lg text-xs text-white hover:bg-slate-700/60 hover:border-cyan-400/40 transition-all duration-200 hover:shadow-lg text-left ring-1 ring-white/10"
-              >
-                <div className="font-medium">{suggestion.text}</div>
-                <div className="text-cyan-300/60 text-xs mt-1">{suggestion.category}</div>
-              </button>
-            ))}
-          </div>
-          
-          {/* Emergency Actions */}
-          <div className="border-t pt-2">
-            <p className="text-xs text-red-400 mb-2">🚨 Darurat:</p>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                onClick={() => {
-                  setInputMessage('rem blong');
-                  setTimeout(() => handleSendMessage(), 100);
-                }}
-                className="flex-1 px-3 py-2 backdrop-blur-xl bg-red-900/40 text-red-300 rounded-lg text-xs font-medium hover:bg-red-800/60 transition-all duration-200 border border-red-500/30 ring-1 ring-white/10"
-              >
-                🛑 Rem Bermasalah
-              </button>
-              <button
-                onClick={() => {
-                  setInputMessage('oli habis');
-                  setTimeout(() => handleSendMessage(), 100);
-                }}
-                className="flex-1 px-3 py-2 backdrop-blur-xl bg-orange-900/40 text-orange-300 rounded-lg text-xs font-medium hover:bg-orange-800/60 transition-all duration-200 border border-orange-500/30 ring-1 ring-white/10"
-              >
-                ⚠️ Oli Habis
-              </button>
+        {/* Sticky Bottom Section - Quick Actions, Suggestions, and Input */}
+        <div ref={footerRef} className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900 via-slate-900/95 to-slate-900/90 backdrop-blur-xl border-t border-cyan-500/20 ring-1 ring-white/10 z-50">
+          <div className="max-w-4xl mx-auto">
+          {/* Quick Actions */}
+          <div className="px-3 sm:px-4 py-2 border-b border-cyan-500/10">
+            <div className="flex flex-wrap gap-1 sm:gap-2 justify-center mb-2">
+              {quickActions.map((action, index) => (
+                <button
+                   key={index}
+                   onClick={() => handleQuickAction(action.action)}
+                   className="backdrop-blur-xl bg-slate-800/40 hover:bg-slate-700/60 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm border border-cyan-500/20 transition-all duration-200 hover:border-cyan-400/40 hover:shadow-lg ring-1 ring-white/10"
+                >
+                  <span className="hidden sm:inline">{action.text}</span>
+                  <span className="sm:hidden">{action.text.split(' ')[0]}</span>
+                </button>
+              ))}
             </div>
           </div>
-        </div>
 
-        {/* Input Area */}
-        <div className="backdrop-blur-xl bg-gradient-to-r from-slate-900/80 via-slate-800/60 to-slate-900/80 border-t border-cyan-500/20 px-3 sm:px-4 py-3 sm:py-4 ring-1 ring-white/10">
+          {/* Quick Suggestions - Collapsible on mobile */}
+          <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-cyan-500/10">
+            <p className="text-xs text-cyan-300/80 mb-2">Coba tanyakan masalah motor Anda:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 sm:gap-2 mb-2">
+              {[
+                { text: 'Motor susah hidup', query: 'susah hidup', category: 'Starter' },
+                { text: 'Asap putih keluar', query: 'asap putih', category: 'Mesin' },
+                { text: 'Rem tidak pakem', query: 'rem blong', category: 'Rem' },
+                { text: 'Oli bocor', query: 'oli bocor', category: 'Pelumasan' },
+                { text: 'Mesin kasar', query: 'mesin kasar', category: 'Mesin' },
+                { text: 'Gigi susah masuk', query: 'gigi susah masuk', category: 'Transmisi' }
+              ].map((suggestion) => (
+                <button
+                  key={suggestion.query}
+                  onClick={() => {
+                    setInputMessage(suggestion.query);
+                    setTimeout(() => handleSendMessage(), 100);
+                  }}
+                  className="px-2 sm:px-3 py-1.5 sm:py-2 backdrop-blur-xl bg-slate-800/40 border border-cyan-500/20 rounded-lg text-xs text-white hover:bg-slate-700/60 hover:border-cyan-400/40 transition-all duration-200 hover:shadow-lg text-center ring-1 ring-white/10"
+                >
+                  <div className="font-medium text-xs sm:text-sm">{suggestion.text}</div>
+                  <div className="text-cyan-300/60 text-xs mt-1 hidden sm:block">{suggestion.category}</div>
+                </button>
+              ))}
+            </div>
+            
+            {/* Emergency Actions */}
+            <div className="border-t border-cyan-500/10 pt-2">
+              <p className="text-xs text-red-400 mb-2">Darurat:</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setInputMessage('rem blong');
+                    setTimeout(() => handleSendMessage(), 100);
+                  }}
+                  className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 backdrop-blur-xl bg-red-900/40 text-red-300 rounded-lg text-xs font-medium hover:bg-red-800/60 transition-all duration-200 border border-red-500/30 ring-1 ring-white/10"
+                >
+                  Rem Bermasalah
+                </button>
+                <button
+                  onClick={() => {
+                    setInputMessage('oli habis');
+                    setTimeout(() => handleSendMessage(), 100);
+                  }}
+                  className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 backdrop-blur-xl bg-orange-900/40 text-orange-300 rounded-lg text-xs font-medium hover:bg-orange-800/60 transition-all duration-200 border border-orange-500/30 ring-1 ring-white/10"
+                >
+                  Oli Habis
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Input Area */}
+          <div className="px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-end space-x-2 sm:space-x-3">
             <div className="flex-1">
               <textarea
-                ref={inputRef}
+                ref={(el) => { inputRef.current = el; textareaRef.current = el; }}
                 value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
+                onChange={onInputChange}
                 onKeyPress={handleKeyPress}
                 placeholder="Ketik gejala motor Anda..."
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 backdrop-blur-xl bg-slate-800/40 border border-cyan-500/30 rounded-2xl focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400/50 resize-none text-sm text-white placeholder-white/60 ring-1 ring-white/10"
                 rows={1}
-                style={{ minHeight: '44px', maxHeight: '120px' }}
+                style={{ minHeight: '44px', maxHeight: '140px' }}
                 disabled={isLoading}
               />
             </div>
@@ -1024,10 +1079,12 @@ export default function Chat() {
             </Button>
           </div>
           
-          {/* Disclaimer */}
-          <p className="text-xs text-white/60 mt-2 text-center">
-            💡 Ini adalah diagnosa awal berbasis AI. Untuk masalah serius, segera konsultasi dengan mekanik profesional.
-          </p>
+            {/* Disclaimer */}
+            <p className="text-xs text-white/60 mt-2 text-center">
+              Ini adalah diagnosa awal berbasis AI. Untuk masalah serius, segera konsultasi dengan mekanik profesional.
+            </p>
+          </div>
+          </div>
         </div>
       </div>
     </div>

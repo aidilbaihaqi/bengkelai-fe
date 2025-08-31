@@ -3,7 +3,7 @@ import { Link } from "@remix-run/react";
 import { useState, useEffect, useRef } from 'react';
 
 export default function HeroSection() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const heroRef = useRef(null);
   const [typedText, setTypedText] = useState('');
@@ -70,7 +70,7 @@ export default function HeroSection() {
           className="absolute top-20 left-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl animate-pulse transition-transform duration-1000 ease-out"
           style={{
             transform: `translate(${mousePosition.x * 20}px, ${mousePosition.y * 20}px)`,
-            opacity: isVisible ? 1 : 0
+                opacity: 1
           }}
         />
         <div 
@@ -78,14 +78,14 @@ export default function HeroSection() {
           style={{ 
             animationDelay: '1s',
             transform: `translate(${mousePosition.x * -30}px, ${mousePosition.y * -30}px)`,
-            opacity: isVisible ? 1 : 0
+            opacity: 1
           }} 
         />
         <div 
           className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-cyan-500/5 to-blue-500/5 rounded-full blur-3xl transition-all duration-1000 ease-out" 
           style={{ 
-            transform: `translate(-50%, -50%) translate(${mousePosition.x * 10}px, ${mousePosition.y * 10}px) scale(${isVisible ? 1 : 0.8})`,
-            opacity: isVisible ? 1 : 0
+            transform: `translate(-50%, -50%) translate(${mousePosition.x * 10}px, ${mousePosition.y * 10}px) scale(1)`,
+            opacity: 1
           }} 
         />
         
@@ -100,7 +100,7 @@ export default function HeroSection() {
               animationDelay: `${i * 0.5}s`,
               animationDuration: `${2 + i * 0.3}s`,
               transform: `translate(${mousePosition.x * (5 + i * 2)}px, ${mousePosition.y * (5 + i * 2)}px)`,
-              opacity: isVisible ? 0.6 : 0,
+              opacity: 0.6,
               transition: 'opacity 1s ease-out, transform 0.3s ease-out'
             }}
           />
@@ -113,9 +113,7 @@ export default function HeroSection() {
           <div className="text-center lg:text-left space-y-8">
             {/* Headline */}
             <div className="space-y-4">
-              <h1 className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight transition-all duration-1000 ease-out transform ${
-                isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-              }`} style={{ transitionDelay: '200ms' }}>
+              <h1 className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight transition-all duration-1000 ease-out transform translate-y-0 opacity-100`} style={{ transitionDelay: '200ms' }}>
                 <span className="bg-gradient-to-r from-white via-cyan-100 to-blue-200 bg-clip-text text-transparent">
                   {typedText.split(' ')[0] || 'Asisten'}
                 </span>
@@ -132,9 +130,7 @@ export default function HeroSection() {
               
               {/* AI Badge */}
               <div className="flex justify-center lg:justify-start">
-                <div className={`backdrop-blur-xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-300/30 rounded-full px-6 py-2 shadow-lg transition-all duration-1000 ease-out transform ${
-                  isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-                }`}>
+                <div className={`backdrop-blur-xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-300/30 rounded-full px-6 py-2 shadow-lg transition-all duration-1000 ease-out transform translate-y-0 opacity-100`}>
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
                     <span className="text-cyan-300 font-semibold text-sm tracking-wide">AI POWERED DIAGNOSTICS</span>
@@ -144,16 +140,12 @@ export default function HeroSection() {
             </div>
             
             {/* Subheadline */}
-            <p className={`text-lg sm:text-xl lg:text-2xl text-white/80 leading-relaxed max-w-2xl transition-all duration-1000 ease-out transform ${
-              isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-            }`} style={{ transitionDelay: '400ms' }}>
+            <p className={`text-lg sm:text-xl lg:text-2xl text-white/80 leading-relaxed max-w-2xl transition-all duration-1000 ease-out transform translate-y-0 opacity-100`} style={{ transitionDelay: '400ms' }}>
               Diagnosa gejala motor dengan teknologi AI, dapatkan solusi langkah demi langkah, dan temukan bengkel terdekat - semua dalam satu platform.
             </p>
             
             {/* CTA Buttons */}
-            <div className={`flex flex-col sm:flex-row gap-4 justify-center lg:justify-start transition-all duration-1000 ease-out transform ${
-              isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-            }`} style={{ transitionDelay: '600ms' }}>
+            <div className={`flex flex-col sm:flex-row gap-4 justify-center lg:justify-start transition-all duration-1000 ease-out transform translate-y-0 opacity-100`} style={{ transitionDelay: '600ms' }}>
               <Link to="/chat">
                 <button className="group bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-2xl hover:shadow-cyan-500/25 transition-all duration-300 hover:-translate-y-1 active:scale-[0.98] ring-1 ring-white/20 relative overflow-hidden">
                   <span className="flex items-center justify-center space-x-2 relative z-10">
@@ -211,12 +203,10 @@ export default function HeroSection() {
               ].map((demo, index) => (
                 <div
                   key={index}
-                  className={`group relative p-6 rounded-2xl backdrop-blur-xl transition-all duration-500 cursor-pointer transform hover:-translate-y-1 ${
+                  className={`group relative p-6 rounded-2xl backdrop-blur-xl transition-all duration-500 cursor-pointer transform hover:-translate-y-1 translate-y-0 opacity-100 ${
                     index === 0
                       ? 'bg-gradient-to-br from-slate-800/90 via-slate-700/80 to-slate-800/90 border-2 border-cyan-400/50 shadow-2xl shadow-cyan-500/20 scale-105'
                       : 'bg-gradient-to-br from-slate-800/60 via-slate-700/50 to-slate-800/60 border border-slate-600/50 hover:border-cyan-400/30 hover:bg-gradient-to-br hover:from-slate-800/80 hover:via-slate-700/70 hover:to-slate-800/80 hover:shadow-xl'
-                  } ${
-                    isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
                   }`}
                   style={{ transitionDelay: `${800 + index * 200}ms` }}
                   onMouseEnter={() => {
@@ -293,9 +283,7 @@ export default function HeroSection() {
               ))}
             </div>
             {/* Main Glass Demo Panel */}
-            <div className={`backdrop-blur-xl bg-gradient-to-br from-slate-900/40 via-slate-800/30 to-slate-900/40 border border-cyan-500/20 rounded-3xl shadow-2xl p-8 max-w-lg mx-auto relative overflow-hidden ring-1 ring-white/10 transition-all duration-1000 ease-out transform ${
-              isVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-12 opacity-0 scale-95'
-            }`} style={{ transitionDelay: '1200ms' }}>
+            <div className={`backdrop-blur-xl bg-gradient-to-br from-slate-900/40 via-slate-800/30 to-slate-900/40 border border-cyan-500/20 rounded-3xl shadow-2xl p-8 max-w-lg mx-auto relative overflow-hidden ring-1 ring-white/10 transition-all duration-1000 ease-out transform translate-y-0 opacity-100 scale-100`} style={{ transitionDelay: '1200ms' }}>
               {/* Glass highlight effect */}
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 rounded-3xl" />

@@ -46,7 +46,8 @@ export default function Header({ title }) {
               { href: '#fitur', label: 'Fitur' },
               { href: '#cara-kerja', label: 'Cara Kerja' },
               { href: '#demo', label: 'Demo' },
-              { href: '#faq', label: 'FAQ' }
+              { href: '#faq', label: 'FAQ' },
+              { href: '/dashboard', label: 'Dashboard' }
             ].map((item, index) => (
               <a 
                 key={item.href}
@@ -105,7 +106,8 @@ export default function Header({ title }) {
               { href: '#fitur', label: 'Fitur' },
               { href: '#cara-kerja', label: 'Cara Kerja' },
               { href: '#demo', label: 'Demo' },
-              { href: '#faq', label: 'FAQ' }
+              { href: '#faq', label: 'FAQ' },
+              { href: '/dashboard', label: 'Dashboard' }
             ].map((item, index) => (
               <a 
                 key={item.href}

@@ -216,26 +216,26 @@ export default function HowItWorksSection() {
         <div className={`mt-16 text-center transform transition-all duration-700 ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`} style={{ transitionDelay: '1000ms' }}>
-          <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-xl max-w-2xl mx-auto hover:shadow-2xl hover:shadow-cyan-500/10 transition-all duration-500 hover:scale-[1.02]">
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 hover:text-cyan-600 transition-colors duration-300">
+          <div className="backdrop-blur-xl bg-slate-800/30 border border-slate-700/50 rounded-2xl p-6 sm:p-8 shadow-xl max-w-2xl mx-auto hover:shadow-2xl hover:shadow-cyan-500/10 hover:bg-slate-700/30 hover:border-cyan-500/30 transition-all duration-500 hover:scale-[1.02]">
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-6 hover:text-cyan-400 transition-colors duration-300">
               Demo Interaktif
             </h3>
-            <div className="bg-gray-50 rounded-xl p-6">
+            <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-600/30 rounded-xl p-6">
               <div className="flex items-center mb-4">
-                <div className="bg-teal-500 text-white p-2 rounded-full mr-3">
+                <div className="bg-cyan-500 text-white p-2 rounded-full mr-3 hover:bg-cyan-400 transition-colors duration-300">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                   </svg>
                 </div>
-                <span className="font-semibold text-gray-800">Contoh Percakapan:</span>
+                <span className="font-semibold text-cyan-300">Contoh Percakapan:</span>
               </div>
               
               <div className="space-y-3 text-left">
-                <div className="bg-teal-100 p-3 rounded-lg">
-                  <p className="text-sm"><strong>Anda:</strong> "Motor susah hidup pagi hari"</p>
+                <div className="bg-cyan-500/20 backdrop-blur-sm border border-cyan-400/30 p-3 rounded-lg hover:bg-cyan-500/30 transition-colors duration-300">
+                  <p className="text-sm text-white"><strong className="text-cyan-300">Anda:</strong> "Motor susah hidup pagi hari"</p>
                 </div>
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <p className="text-sm"><strong>BengkelAI:</strong> "Kemungkinan aki lemah atau karburator kotor. Estimasi servis Rp 150-250 ribu. Mau cari bengkel terdekat?"</p>
+                <div className="bg-blue-500/20 backdrop-blur-sm border border-blue-400/30 p-3 rounded-lg hover:bg-blue-500/30 transition-colors duration-300">
+                  <p className="text-sm text-white"><strong className="text-blue-300">BengkelAI:</strong> "Kemungkinan aki lemah atau karburator kotor. Estimasi servis Rp 150-250 ribu. Mau cari bengkel terdekat?"</p>
                 </div>
               </div>
             </div>
