@@ -1,5 +1,10 @@
-import { useState, useRef, useEffect } from "react";
-import { Link } from "@remix-run/react";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
+import { Link, useNavigate } from "@remix-run/react";
+import LoadingSpinner, { SkeletonLoader, CardSkeleton, ButtonLoading } from "../components/LoadingSpinner";
+import ErrorBoundary from "../components/ErrorBoundary";
+
+// Lazy load Google Maps component
+const LazyGoogleMap = lazy(() => import("../components/LazyGoogleMap"));
 
 export const meta = () => {
   return [
@@ -9,6 +14,7 @@ export const meta = () => {
 };
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [showOilModal, setShowOilModal] = useState(false);
   const [motorCondition, setMotorCondition] = useState({
@@ -42,12 +48,177 @@ export default function Dashboard() {
 
   // Workshop Finder state - moved to component level to avoid hooks rule violation
   const [selectedWorkshop, setSelectedWorkshop] = useState(null);
-  const mapRef = useRef(null);
-  const [map, setMap] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const markersRef = useRef([]);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+
+  // Loading states
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [isSavingReminder, setIsSavingReminder] = useState(false);
+
+  // Oil change modal focus management refs
+  const oilModalRef = useRef(null);
+  const oilModalTriggerRef = useRef(null);
+  const oilModalFirstFocusableRef = useRef(null);
+  const oilModalLastFocusableRef = useRef(null);
+
+  // Add reminder modal focus management refs
+  const addReminderModalRef = useRef(null);
+  const addReminderTriggerRef = useRef(null);
+  const addReminderFirstFocusableRef = useRef(null);
+  const addReminderLastFocusableRef = useRef(null);
+
+  // Product detail modal focus management refs
+  const productDetailModalRef = useRef(null);
+  const productDetailTriggerRef = useRef(null);
+  const productDetailFirstFocusableRef = useRef(null);
+  const productDetailLastFocusableRef = useRef(null);
+
+  // Oil change modal focus management
+  useEffect(() => {
+    if (showOilModal && oilModalFirstFocusableRef.current) {
+      oilModalFirstFocusableRef.current.focus();
+    }
+  }, [showOilModal]);
+
+  // Add reminder modal focus management
+  useEffect(() => {
+    if (showAddReminder && addReminderFirstFocusableRef.current) {
+      addReminderFirstFocusableRef.current.focus();
+    }
+  }, [showAddReminder]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!showAddReminder) return;
+
+      if (e.key === 'Escape') {
+        setShowAddReminder(false);
+        if (addReminderTriggerRef.current) {
+          addReminderTriggerRef.current.focus();
+        }
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        const focusableElements = addReminderModalRef.current?.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        
+        if (focusableElements && focusableElements.length > 0) {
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements[focusableElements.length - 1];
+          
+          if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+              e.preventDefault();
+              lastElement.focus();
+            }
+          } else {
+            if (document.activeElement === lastElement) {
+              e.preventDefault();
+              firstElement.focus();
+            }
+          }
+        }
+      }
+    };
+
+    if (showAddReminder) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showAddReminder]);
+
+  // Product detail modal focus management
+  useEffect(() => {
+    if (showProductDetail && productDetailFirstFocusableRef.current) {
+      productDetailFirstFocusableRef.current.focus();
+    }
+  }, [showProductDetail]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!showProductDetail) return;
+
+      if (e.key === 'Escape') {
+        setShowProductDetail(false);
+        if (productDetailTriggerRef.current) {
+          productDetailTriggerRef.current.focus();
+        }
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        const focusableElements = productDetailModalRef.current?.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        
+        if (focusableElements && focusableElements.length > 0) {
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements[focusableElements.length - 1];
+          
+          if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+              e.preventDefault();
+              lastElement.focus();
+            }
+          } else {
+            if (document.activeElement === lastElement) {
+              e.preventDefault();
+              firstElement.focus();
+            }
+          }
+        }
+      }
+    };
+
+    if (showProductDetail) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showProductDetail]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!showOilModal) return;
+
+      if (e.key === 'Escape') {
+        setShowOilModal(false);
+        if (oilModalTriggerRef.current) {
+          oilModalTriggerRef.current.focus();
+        }
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        const focusableElements = oilModalRef.current?.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        
+        if (focusableElements && focusableElements.length > 0) {
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements[focusableElements.length - 1];
+          
+          if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+              e.preventDefault();
+              lastElement.focus();
+            }
+          } else {
+            if (document.activeElement === lastElement) {
+              e.preventDefault();
+              firstElement.focus();
+            }
+          }
+        }
+      }
+    };
+
+    if (showOilModal) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showOilModal]);
 
   // Workshop data
   const workshops = [
@@ -118,166 +289,53 @@ export default function Dashboard() {
     }
   ];
 
-  // Workshop Finder useEffect - moved to component level to avoid hooks rule violation
+  // Get user location when workshop-finder tab is activated
   useEffect(() => {
-    if (activeTab === 'workshop-finder') {
-      const initMap = async () => {
-        try {
-          setIsLoading(true);
-          setError(null);
-
-          // Get user location
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const userPos = {
-                  lat: position.coords.latitude,
-                  lng: position.coords.longitude
-                };
-                setUserLocation(userPos);
-                loadGoogleMaps(userPos);
-              },
-              (error) => {
-                console.error('Error getting location:', error);
-                // Default to Jakarta if location access denied
-                const defaultPos = { lat: -6.2088, lng: 106.8456 };
-                setUserLocation(defaultPos);
-                loadGoogleMaps(defaultPos);
-              }
-            );
-          } else {
-            // Default to Jakarta if geolocation not supported
+    if (activeTab === 'workshop-finder' && !userLocation) {
+      setIsLoadingLocation(true);
+      
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userPos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            setUserLocation(userPos);
+            setIsLoadingLocation(false);
+          },
+          (error) => {
+            console.error('Error getting location:', error);
+            // Default to Jakarta if location access denied
             const defaultPos = { lat: -6.2088, lng: 106.8456 };
             setUserLocation(defaultPos);
-            loadGoogleMaps(defaultPos);
+            setIsLoadingLocation(false);
+          },
+          {
+            timeout: 10000,
+            enableHighAccuracy: true,
+            maximumAge: 300000
           }
-        } catch (err) {
-          setError('Failed to initialize map');
-          setIsLoading(false);
-        }
-      };
-
-      const loadGoogleMaps = async (center) => {
-        try {
-          const { Loader } = await import('@googlemaps/js-api-loader');
-          const loader = new Loader({
-            apiKey: "AIzaSyBHVIS02EN0lzuURaOEWbNdqGr_b-WrPLY",
-            version: "weekly",
-            libraries: ["places"]
-          });
-
-          const google = await loader.load();
-          
-          const mapInstance = new google.maps.Map(mapRef.current, {
-            center: center,
-            zoom: 13,
-            styles: [
-              {
-                "featureType": "all",
-                "elementType": "geometry.fill",
-                "stylers": [{"color": "#1e293b"}]
-              },
-              {
-                "featureType": "all",
-                "elementType": "labels.text.fill",
-                "stylers": [{"color": "#ffffff"}]
-              },
-              {
-                "featureType": "water",
-                "elementType": "geometry",
-                "stylers": [{"color": "#0f172a"}]
-              },
-              {
-                "featureType": "road",
-                "elementType": "geometry",
-                "stylers": [{"color": "#374151"}]
-              }
-            ]
-          });
-
-          // Clear existing markers
-          markersRef.current.forEach(marker => {
-            marker.setMap(null);
-          });
-          markersRef.current = [];
-
-          // Add user location marker
-          const userMarker = new google.maps.Marker({
-            position: center,
-            map: mapInstance,
-            title: "Your Location",
-            icon: {
-              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="#ffffff" stroke-width="2"/>
-                  <circle cx="12" cy="12" r="3" fill="#ffffff"/>
-                </svg>
-              `),
-              scaledSize: new google.maps.Size(24, 24)
-            }
-          });
-          markersRef.current.push(userMarker);
-
-          // Add workshop markers
-          workshops.forEach(workshop => {
-            const marker = new google.maps.Marker({
-              position: { lat: workshop.lat, lng: workshop.lng },
-              map: mapInstance,
-              title: workshop.name,
-              icon: {
-                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#EF4444"/>
-                  </svg>
-                `),
-                scaledSize: new google.maps.Size(32, 32)
-              }
-            });
-
-            marker.addListener('click', () => {
-              setSelectedWorkshop(workshop);
-            });
-            
-            markersRef.current.push(marker);
-          });
-
-          setMap(mapInstance);
-          setIsLoading(false);
-        } catch (err) {
-          console.error('Error loading Google Maps:', err);
-          setError('Failed to load map');
-          setIsLoading(false);
-        }
-      };
-
-      if (mapRef.current) {
-        initMap();
+        );
+      } else {
+        // Default to Jakarta if geolocation not supported
+        const defaultPos = { lat: -6.2088, lng: 106.8456 };
+        setUserLocation(defaultPos);
+        setIsLoadingLocation(false);
       }
     }
+  }, [activeTab, userLocation]);
 
-    // Cleanup function to prevent DOM manipulation conflicts
-    return () => {
-      // Clear markers first
-      if (markersRef.current && markersRef.current.length > 0) {
-        markersRef.current.forEach(marker => {
-          if (marker && marker.setMap) {
-            marker.setMap(null);
-          }
-        });
-        markersRef.current = [];
-      }
-      
-      // Clear map instance
-      if (map && map.getDiv) {
-        setMap(null);
-      }
-      
-      // Only clear container if it exists and has children
-      if (mapRef.current && mapRef.current.hasChildNodes()) {
-        mapRef.current.innerHTML = '';
-      }
-    };
-  }, [activeTab, workshops]);
+  // Simulate loading when spare-parts tab is activated
+  useEffect(() => {
+    if (activeTab === 'spare-parts') {
+      setIsLoadingProducts(true);
+      const timer = setTimeout(() => {
+        setIsLoadingProducts(false);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab]);
 
   const [serviceReminders, setServiceReminders] = useState([
     {
@@ -406,7 +464,7 @@ export default function Dashboard() {
             </svg>
           </div>
           <h4 className="font-semibold text-white mb-1">Reminder</h4>
-          <p className="text-sm text-gray-300">Jadwal perawatan motor</p>
+          <p className="text-sm text-gray-200">Jadwal perawatan motor</p>
         </button>
         
         <Link 
@@ -420,7 +478,7 @@ export default function Dashboard() {
             </svg>
           </div>
           <h4 className="font-semibold text-white mb-1">AI Diagnosa</h4>
-          <p className="text-sm text-gray-300">Chat dengan AI assistant</p>
+          <p className="text-sm text-gray-200">Chat dengan AI assistant</p>
         </Link>
       </div>
 
@@ -456,11 +514,19 @@ export default function Dashboard() {
       {/* Oil Change Modal */}
       {showOilModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => setShowOilModal(false)}>
-          <div className="bg-slate-900 rounded-2xl border border-red-500/30 w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div ref={oilModalRef} className="bg-slate-900 rounded-2xl border border-red-500/30 w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 p-6 border-b border-red-500/30 relative">
               <button 
+                ref={oilModalFirstFocusableRef}
                 onClick={() => setShowOilModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setShowOilModal(false);
+                  }
+                }}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white focus:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded transition-colors"
+                aria-label="Close modal"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -497,7 +563,7 @@ export default function Dashboard() {
                   <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M9 11H7v6h2v-6zm4 0h-2v6h2v-6zm4 0h-2v6h2v-6zm2.5-9H18V1h-2v1H8V1H6v1H4.5C3.67 2 3 2.67 3 3.5v15C3 19.33 3.67 20 4.5 20h15c.83 0 1.5-.67 1.5-1.5v-15C21 2.67 20.33 2 19.5 2z"/>
                   </svg>
-                  <p className="text-gray-300"><strong>Terakhir ganti:</strong> 5 Januari 2024</p>
+                  <p className="text-gray-200"><strong>Terakhir ganti:</strong> 5 Januari 2024</p>
                 </div>
                 
                 <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4">
@@ -519,7 +585,15 @@ export default function Dashboard() {
                     setShowOilModal(false);
                     setActiveTab('workshop-finder');
                   }}
-                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-4 rounded-lg hover:from-red-400 hover:to-red-500 transition-all duration-200 font-semibold flex items-center justify-center gap-2"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      console.log('Button Cari Bengkel diklik!');
+                      setShowOilModal(false);
+                      setActiveTab('workshop-finder');
+                    }
+                  }}
+                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-4 rounded-lg hover:from-red-400 hover:to-red-500 focus:from-red-400 focus:to-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all duration-200 font-semibold flex items-center justify-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
@@ -527,11 +601,19 @@ export default function Dashboard() {
                   Cari Bengkel
                 </button>
                 <button 
+                  ref={oilModalLastFocusableRef}
                   onClick={() => {
                     console.log('Button Nanti diklik!');
                     setShowOilModal(false);
                   }}
-                  className="px-6 py-3 bg-slate-700 text-gray-300 rounded-lg hover:bg-slate-600 transition-colors font-medium"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      console.log('Button Nanti diklik!');
+                      setShowOilModal(false);
+                    }
+                  }}
+                  className="px-6 py-3 bg-slate-700 text-gray-300 rounded-lg hover:bg-slate-600 focus:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-colors font-medium"
                 >
                   Nanti
                 </button>
@@ -546,125 +628,6 @@ export default function Dashboard() {
 
 
   const renderWorkshopFinder = () => {
-      const initMap = async () => {
-        try {
-          setIsLoading(true);
-          setError(null);
-
-          // Get user location
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const userPos = {
-                  lat: position.coords.latitude,
-                  lng: position.coords.longitude
-                };
-                setUserLocation(userPos);
-                loadGoogleMaps(userPos);
-              },
-              (error) => {
-                console.error('Error getting location:', error);
-                // Default to Jakarta if location access denied
-                const defaultPos = { lat: -6.2088, lng: 106.8456 };
-                setUserLocation(defaultPos);
-                loadGoogleMaps(defaultPos);
-              }
-            );
-          } else {
-            // Default to Jakarta if geolocation not supported
-            const defaultPos = { lat: -6.2088, lng: 106.8456 };
-            setUserLocation(defaultPos);
-            loadGoogleMaps(defaultPos);
-          }
-        } catch (err) {
-          setError('Failed to initialize map');
-          setIsLoading(false);
-        }
-      };
-
-      const loadGoogleMaps = async (center) => {
-        try {
-          const { Loader } = await import('@googlemaps/js-api-loader');
-          const loader = new Loader({
-            apiKey: "AIzaSyBHVIS02EN0lzuURaOEWbNdqGr_b-WrPLY",
-            version: "weekly",
-            libraries: ["places"]
-          });
-
-          const google = await loader.load();
-          
-          const mapInstance = new google.maps.Map(mapRef.current, {
-            center: center,
-            zoom: 13,
-            styles: [
-              {
-                "featureType": "all",
-                "elementType": "geometry.fill",
-                "stylers": [{"color": "#1e293b"}]
-              },
-              {
-                "featureType": "all",
-                "elementType": "labels.text.fill",
-                "stylers": [{"color": "#ffffff"}]
-              },
-              {
-                "featureType": "water",
-                "elementType": "geometry",
-                "stylers": [{"color": "#0f172a"}]
-              },
-              {
-                "featureType": "road",
-                "elementType": "geometry",
-                "stylers": [{"color": "#374151"}]
-              }
-            ]
-          });
-
-          // Add user location marker
-          new google.maps.Marker({
-            position: center,
-            map: mapInstance,
-            title: "Your Location",
-            icon: {
-              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="#ffffff" stroke-width="2"/>
-                  <circle cx="12" cy="12" r="3" fill="#ffffff"/>
-                </svg>
-              `),
-              scaledSize: new google.maps.Size(24, 24)
-            }
-          });
-
-          // Add workshop markers
-          workshops.forEach(workshop => {
-            const marker = new google.maps.Marker({
-              position: { lat: workshop.lat, lng: workshop.lng },
-              map: mapInstance,
-              title: workshop.name,
-              icon: {
-                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#EF4444"/>
-                  </svg>
-                `),
-                scaledSize: new google.maps.Size(32, 32)
-              }
-            });
-
-            marker.addListener('click', () => {
-              setSelectedWorkshop(workshop);
-            });
-          });
-
-          setMap(mapInstance);
-          setIsLoading(false);
-        } catch (err) {
-          console.error('Error loading Google Maps:', err);
-          setError('Failed to load Google Maps');
-          setIsLoading(false);
-        }
-      };
 
       return (
       <div className="space-y-6">
@@ -684,27 +647,21 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Map */}
             <div className="relative">
-              <div 
-                ref={mapRef} 
-                className="w-full h-96 rounded-lg border border-slate-600/50"
-                style={{ minHeight: '400px' }}
-              >
-                {isLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-800 rounded-lg">
-                    <div className="text-white text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500 mx-auto mb-2"></div>
-                      <p>Loading map...</p>
-                    </div>
+              <Suspense fallback={
+                <div className="w-full h-96 rounded-lg border border-slate-600/50 flex items-center justify-center bg-slate-800" style={{ minHeight: '400px' }}>
+                  <div className="text-white text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500 mx-auto mb-2"></div>
+                    <p>Loading map...</p>
                   </div>
-                )}
-                {error && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-800 rounded-lg">
-                    <div className="text-red-400 text-center">
-                      <p>{error}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              }>
+                <LazyGoogleMap 
+                  userLocation={userLocation}
+                  workshops={workshops}
+                  selectedWorkshop={selectedWorkshop}
+                  onWorkshopSelect={setSelectedWorkshop}
+                />
+              </Suspense>
             </div>
 
             {/* Workshop List */}
@@ -712,7 +669,12 @@ export default function Dashboard() {
               <h4 className="font-semibold text-white mb-3 sticky top-0 bg-slate-800/90 backdrop-blur-sm py-2 -mx-2 px-2 rounded">
                 Bengkel Terdekat
               </h4>
-              {workshops.map((workshop) => (
+              {isLoadingLocation ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <LoadingSpinner size="medium" text="Mencari lokasi Anda..." />
+                </div>
+              ) : (
+                workshops.map((workshop) => (
                 <div 
                   key={workshop.id} 
                   className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
@@ -769,7 +731,8 @@ export default function Dashboard() {
                     ))}
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </div>
 
@@ -793,7 +756,7 @@ export default function Dashboard() {
                 </div>
                 <button 
                   onClick={() => setSelectedWorkshop(null)}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -876,16 +839,26 @@ export default function Dashboard() {
 
   const renderReminder = () => {
 
-    const addReminder = () => {
+    const addReminder = async () => {
       if (newReminder.component && newReminder.dueDate) {
-        const reminder = {
-          id: Date.now(),
-          ...newReminder,
-          createdAt: new Date().toISOString().split('T')[0]
-        };
-        setServiceReminders([...serviceReminders, reminder]);
-        setNewReminder({ component: '', dueDate: '', urgency: 'medium', description: '' });
-        setShowAddReminder(false);
+        setIsSavingReminder(true);
+        try {
+          // Simulate API call delay
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const reminder = {
+            id: Date.now(),
+            ...newReminder,
+            createdAt: new Date().toISOString().split('T')[0]
+          };
+          setServiceReminders([...serviceReminders, reminder]);
+          setNewReminder({ component: '', dueDate: '', urgency: 'medium', description: '' });
+          setShowAddReminder(false);
+        } catch (error) {
+          console.error('Error saving reminder:', error);
+        } finally {
+          setIsSavingReminder(false);
+        }
       }
     };
 
@@ -932,8 +905,8 @@ export default function Dashboard() {
                       </span>
                       <h4 className="font-medium text-white">{reminder.component}</h4>
                     </div>
-                    <p className="text-sm text-gray-300 mb-1">{reminder.description}</p>
-                    <div className="flex items-center gap-4 text-xs text-gray-400">
+                    <p className="text-sm text-gray-200 mb-1">{reminder.description}</p>
+                    <div className="flex items-center gap-4 text-xs text-gray-300">
                       <span>Jatuh tempo: {new Date(reminder.dueDate).toLocaleDateString('id-ID')}</span>
                       <span>Dibuat: {new Date(reminder.createdAt).toLocaleDateString('id-ID')}</span>
                     </div>
@@ -965,13 +938,21 @@ export default function Dashboard() {
         {/* Add Reminder Modal */}
         {showAddReminder && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-900 rounded-2xl border border-cyan-500/30 w-full max-w-md">
+            <div ref={addReminderModalRef} className="bg-slate-900 rounded-2xl border border-cyan-500/30 w-full max-w-md">
               <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-4 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-white">Tambah Reminder Baru</h3>
                   <button 
+                    ref={addReminderFirstFocusableRef}
                     onClick={() => setShowAddReminder(false)}
-                    className="text-white/80 hover:text-white p-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setShowAddReminder(false);
+                      }
+                    }}
+                    className="text-white/80 hover:text-white focus:text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded p-1 transition-colors"
+                    aria-label="Close modal"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -982,13 +963,18 @@ export default function Dashboard() {
               
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Komponen</label>
+                  <label className="block text-sm font-medium text-gray-200 mb-2">Komponen</label>
                   <input
                     type="text"
                     value={newReminder.component}
                     onChange={(e) => setNewReminder({...newReminder, component: e.target.value})}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.target.blur();
+                      }
+                    }}
                     placeholder="Contoh: Ganti Oli Mesin"
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none"
+                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-gray-300 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
                   />
                 </div>
                 
@@ -998,7 +984,12 @@ export default function Dashboard() {
                     type="date"
                     value={newReminder.dueDate}
                     onChange={(e) => setNewReminder({...newReminder, dueDate: e.target.value})}
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white focus:border-cyan-500 focus:outline-none"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.target.blur();
+                      }
+                    }}
+                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
                   />
                 </div>
                 
@@ -1007,7 +998,12 @@ export default function Dashboard() {
                   <select
                     value={newReminder.urgency}
                     onChange={(e) => setNewReminder({...newReminder, urgency: e.target.value})}
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white focus:border-cyan-500 focus:outline-none"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.target.blur();
+                      }
+                    }}
+                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
                   >
                     <option value="low">Rendah</option>
                     <option value="medium">Sedang</option>
@@ -1016,29 +1012,49 @@ export default function Dashboard() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Deskripsi (Opsional)</label>
+                  <label className="block text-sm font-medium text-gray-200 mb-2">Deskripsi (Opsional)</label>
                   <textarea
                     value={newReminder.description}
                     onChange={(e) => setNewReminder({...newReminder, description: e.target.value})}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.target.blur();
+                      }
+                    }}
                     placeholder="Deskripsi tambahan..."
                     rows={3}
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none resize-none"
+                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-gray-300 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
                   />
                 </div>
                 
                 <div className="flex gap-3 pt-4">
                   <button 
                     onClick={() => setShowAddReminder(false)}
-                    className="flex-1 bg-slate-700 text-gray-300 py-2 rounded-lg hover:bg-slate-600 transition-colors"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setShowAddReminder(false);
+                      }
+                    }}
+                    className="flex-1 bg-slate-700 text-gray-300 py-2 rounded-lg hover:bg-slate-600 focus:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-colors"
                   >
                     Batal
                   </button>
-                  <button 
+                  <ButtonLoading
+                    ref={addReminderLastFocusableRef}
                     onClick={addReminder}
-                    className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-2 rounded-lg hover:from-cyan-400 hover:to-blue-500 transition-all duration-200"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        addReminder();
+                      }
+                    }}
+                    loading={isSavingReminder}
+                    disabled={isSavingReminder}
+                    className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-2 rounded-lg hover:from-cyan-400 hover:to-blue-500 focus:from-cyan-400 focus:to-blue-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Simpan
-                  </button>
+                    {isSavingReminder ? 'Menyimpan...' : 'Simpan'}
+                  </ButtonLoading>
                 </div>
               </div>
             </div>
@@ -1345,19 +1361,19 @@ export default function Dashboard() {
                       <div className="flex text-yellow-400">
                         {'★'.repeat(Math.floor(selectedProduct.rating))}
                       </div>
-                      <span className="text-sm text-gray-400">({selectedProduct.rating})</span>
+                      <span className="text-sm text-gray-300">({selectedProduct.rating})</span>
                     </div>
-                    <span className="text-sm text-gray-400">{selectedProduct.reviews} ulasan</span>
+                    <span className="text-sm text-gray-300">{selectedProduct.reviews} ulasan</span>
                   </div>
                   
                   <div className="mb-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-2xl font-bold text-green-400">Rp {selectedProduct.price.toLocaleString()}</span>
                       {selectedProduct.originalPrice > selectedProduct.price && (
-                        <span className="text-lg text-gray-500 line-through">Rp {selectedProduct.originalPrice.toLocaleString()}</span>
+                        <span className="text-lg text-gray-400 line-through">Rp {selectedProduct.originalPrice.toLocaleString()}</span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-400">Stok: {selectedProduct.stock} unit</p>
+                    <p className="text-sm text-gray-300">Stok: {selectedProduct.stock} unit</p>
                   </div>
                   
                   <p className="text-gray-300 mb-6">{selectedProduct.description}</p>
@@ -1412,7 +1428,7 @@ export default function Dashboard() {
               </h3>
               <button 
                 onClick={() => setCart([])}
-                className="text-gray-400 hover:text-red-400 transition-colors"
+                className="text-gray-300 hover:text-red-400 transition-colors"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -1425,7 +1441,7 @@ export default function Dashboard() {
                 <div key={item.id} className="flex items-center justify-between bg-slate-800/50 rounded p-2">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                    <p className="text-xs text-gray-400">{item.quantity}x Rp {item.price.toLocaleString()}</p>
+                    <p className="text-xs text-gray-300">{item.quantity}x Rp {item.price.toLocaleString()}</p>
                   </div>
                   <button 
                     onClick={() => removeFromCart(item.id)}
@@ -1477,7 +1493,7 @@ export default function Dashboard() {
                   placeholder="Cari produk, brand, atau deskripsi..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-300 focus:border-cyan-500 focus:outline-none transition-colors"
                 />
               </div>
             </div>
@@ -1506,7 +1522,12 @@ export default function Dashboard() {
           
           {/* Products Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {sortedProducts.map((product) => (
+            {isLoadingProducts ? (
+              Array.from({ length: 8 }).map((_, index) => (
+                <CardSkeleton key={index} />
+              ))
+            ) : (
+              sortedProducts.map((product) => (
               <div key={product.id} className="bg-slate-700/30 rounded-lg border border-slate-600/50 overflow-hidden hover:border-cyan-500/30 transition-all duration-200 hover:transform hover:scale-105">
                 <div className="relative">
                   <img 
@@ -1544,7 +1565,7 @@ export default function Dashboard() {
                     <div className="flex text-yellow-400 text-xs">
                       {'★'.repeat(Math.floor(product.rating))}
                     </div>
-                    <span className="text-xs text-gray-400">({product.rating}) • {product.reviews} ulasan</span>
+                    <span className="text-xs text-gray-300">({product.rating}) • {product.reviews} ulasan</span>
                   </div>
                   
                   <div className="mb-3">
@@ -1554,7 +1575,7 @@ export default function Dashboard() {
                         <span className="text-sm text-gray-500 line-through">Rp {product.originalPrice.toLocaleString()}</span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400">{product.seller}</p>
+                    <p className="text-xs text-gray-300">{product.seller}</p>
                   </div>
                   
                   <div className="flex gap-2">
@@ -1581,7 +1602,8 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
           
           {sortedProducts.length === 0 && (
@@ -1694,7 +1716,13 @@ export default function Dashboard() {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                if (tab.id === 'spare-parts') {
+                  navigate('/spare-parts');
+                } else {
+                  setActiveTab(tab.id);
+                }
+              }}
               className={`px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
                 activeTab === tab.id
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg ring-1 ring-white/20'
@@ -1712,11 +1740,25 @@ export default function Dashboard() {
 
         {/* Tab Content */}
         <div className="relative z-10">
-          {activeTab === 'overview' && renderOverview()}
+          {activeTab === 'overview' && (
+            <ErrorBoundary>
+              {renderOverview()}
+            </ErrorBoundary>
+          )}
 
-          {activeTab === 'workshop-finder' && renderWorkshopFinder()}
-          {activeTab === 'reminder' && renderReminder()}
-          {activeTab === 'spare-parts' && renderSpareParts()}
+          {activeTab === 'workshop-finder' && (
+            <ErrorBoundary>
+              {renderWorkshopFinder()}
+            </ErrorBoundary>
+          )}
+          
+          {activeTab === 'reminder' && (
+            <ErrorBoundary>
+              {renderReminder()}
+            </ErrorBoundary>
+          )}
+          
+          {/* spare-parts tab now redirects to /spare-parts route */}
         </div>
       </div>
     </div>

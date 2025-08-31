@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "@remix-run/react";
 
 export const meta = () => {
@@ -198,6 +198,70 @@ export default function SpareParts() {
   const [sortBy, setSortBy] = useState('popular');
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
+  
+  // Refs for focus management
+  const cartModalRef = useRef(null);
+  const cartTriggerRef = useRef(null);
+  const firstFocusableElementRef = useRef(null);
+  const lastFocusableElementRef = useRef(null);
+  
+  // Focus management for cart modal
+  useEffect(() => {
+    if (showCart) {
+      // Focus the first focusable element when modal opens
+      setTimeout(() => {
+        if (firstFocusableElementRef.current) {
+          firstFocusableElementRef.current.focus();
+        }
+      }, 100);
+      
+      // Add keyboard event listener for focus trapping
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          setShowCart(false);
+          if (cartTriggerRef.current) {
+            cartTriggerRef.current.focus();
+          }
+        }
+        
+        if (e.key === 'Tab') {
+          const focusableElements = cartModalRef.current?.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          
+          if (focusableElements && focusableElements.length > 0) {
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+            
+            if (e.shiftKey) {
+              // Shift + Tab
+              if (document.activeElement === firstElement) {
+                e.preventDefault();
+                lastElement.focus();
+              }
+            } else {
+              // Tab
+              if (document.activeElement === lastElement) {
+                e.preventDefault();
+                firstElement.focus();
+              }
+            }
+          }
+        }
+      };
+      
+      document.addEventListener('keydown', handleKeyDown);
+      
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    } else {
+      // Return focus to cart trigger when modal closes
+      if (cartTriggerRef.current) {
+        cartTriggerRef.current.focus();
+      }
+    }
+  }, [showCart]);
 
   const categories = [
     { key: 'semua', label: 'Semua Kategori', icon: '🛍️' },
@@ -274,37 +338,39 @@ export default function SpareParts() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <header className="bg-slate-900/80 backdrop-blur-xl border-b border-cyan-500/20 sticky top-0 z-40">
+      <header className="bg-slate-900/80 backdrop-blur-xl border-b border-cyan-500/20 sticky top-0 z-40" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2" aria-label="BengkelAI - Kembali ke beranda">
               <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">BA</span>
               </div>
               <span className="text-white font-bold text-xl">BengkelAI</span>
             </Link>
             
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-6" role="navigation" aria-label="Navigasi utama">
               <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors">
                 Dashboard
               </Link>
               <Link to="/chat" className="text-gray-300 hover:text-white transition-colors">
                 Chat AI
               </Link>
-              <span className="text-cyan-400 font-medium">Spare Parts</span>
+              <span className="text-cyan-400 font-medium" aria-current="page">Spare Parts</span>
             </nav>
 
             {/* Cart Button */}
             <button 
+              ref={cartTriggerRef}
               onClick={() => setShowCart(true)}
               className="relative bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+              aria-label={`Buka keranjang belanja (${cart.length} item)`}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 11-4 0v-6m4 0V9a2 2 0 10-4 0v4.01" />
               </svg>
               Keranjang
               {cart.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" aria-hidden="true">
                   {cart.length}
                 </span>
               )}
@@ -315,74 +381,104 @@ export default function SpareParts() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
-        <div className="text-center mb-12">
+        <section className="text-center mb-12" role="banner">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Spare Parts <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">Premium</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
             Temukan spare parts berkualitas tinggi untuk motor Anda dengan harga terbaik
           </p>
-        </div>
+        </section>
 
         {/* Search and Filter */}
-        <div className="mb-8">
+        <section className="mb-8" role="search" aria-label="Pencarian dan filter produk">
+          <h2 className="sr-only">Pencarian dan Filter Produk</h2>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             {/* Search Bar */}
             <div className="flex-1 relative">
+              <label htmlFor="search-input" className="sr-only">Cari spare parts</label>
               <input
+                id="search-input"
                 type="text"
                 placeholder="Cari spare parts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 pl-12 text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearchQuery('');
+                    e.target.blur();
+                  }
+                }}
+                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 pl-12 text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all duration-200"
+                aria-describedby="search-help"
               />
-              <svg className="w-5 h-5 text-gray-400 absolute left-4 top-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-gray-400 absolute left-4 top-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
+              <div id="search-help" className="sr-only">Ketik nama produk atau brand untuk mencari spare parts</div>
             </div>
 
             {/* Sort Dropdown */}
-            <select 
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none"
-            >
-              <option value="popular">Terpopuler</option>
-              <option value="price-low">Harga Terendah</option>
-              <option value="price-high">Harga Tertinggi</option>
-              <option value="rating">Rating Tertinggi</option>
-            </select>
+            <div>
+              <label htmlFor="sort-select" className="sr-only">Urutkan produk berdasarkan</label>
+              <select 
+                id="sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none"
+                aria-label="Urutkan produk"
+              >
+                <option value="popular">Terpopuler</option>
+                <option value="price-low">Harga Terendah</option>
+                <option value="price-high">Harga Tertinggi</option>
+                <option value="rating">Rating Tertinggi</option>
+              </select>
+            </div>
           </div>
 
           {/* Category Filter */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter kategori produk">
+            <h3 className="sr-only">Pilih Kategori</h3>
             {categories.map(category => (
               <button
                 key={category.key}
                 onClick={() => setSelectedCategory(category.key)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedCategory(category.key);
+                  }
+                }}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
                   selectedCategory === category.key
                     ? 'bg-cyan-500 text-white'
                     : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
                 }`}
+                aria-pressed={selectedCategory === category.key}
+                aria-label={`Filter kategori ${category.label}`}
               >
-                <span>{category.icon}</span>
+                <span aria-hidden="true">{category.icon}</span>
                 {category.label}
               </button>
             ))}
           </div>
-        </div>
+        </section>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {getFilteredProducts().map(product => (
-            <div key={product.id} className="bg-slate-800/60 backdrop-blur-xl border border-slate-700 rounded-xl overflow-hidden hover:border-cyan-500/50 transition-all duration-300 group">
+        <main role="main">
+          <h2 className="sr-only">Daftar Produk Spare Parts</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" role="grid" aria-label="Produk spare parts">
+            {getFilteredProducts().map(product => (
+              <article key={product.id} className="bg-slate-800/60 backdrop-blur-xl border border-slate-700 rounded-xl overflow-hidden hover:border-cyan-500/50 transition-all duration-300 group" role="gridcell">
               {/* Product Image */}
               <div className="relative overflow-hidden">
                 <img 
                   src={product.image} 
-                  alt={product.name}
+                  alt={`${product.name} - ${product.description}`}
                   className="w-full h-48 object-cover bg-gradient-to-br from-slate-700 to-slate-600"
+                  loading="lazy"
+                  width="300"
+                  height="192"
                   onError={(e) => {
                     e.target.style.display = 'none';
                     e.target.nextSibling.style.display = 'flex';
@@ -430,24 +526,41 @@ export default function SpareParts() {
 
                 <div className="flex gap-2">
                   <button 
-                    onClick={() => addToCart(product)}
-                    className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  onClick={() => addToCart(product)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      addToCart(product);
+                    }
+                  }}
+                  className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                  aria-label={`Tambah ${product.name} ke keranjang`}
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 11-4 0v-6m4 0V9a2 2 0 10-4 0v4.01" />
                     </svg>
                     Tambah
                   </button>
-                  <button className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <button 
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      // Add wishlist functionality here
+                    }
+                  }}
+                  className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900" 
+                  aria-label={`Tambah ${product.name} ke wishlist`}
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        </main>
 
         {getFilteredProducts().length === 0 && (
           <div className="text-center py-12">
@@ -460,33 +573,53 @@ export default function SpareParts() {
 
       {/* Shopping Cart Modal */}
       {showCart && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-2xl border border-cyan-500/30 w-full max-w-md max-h-[80vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+          <div ref={cartModalRef} className="bg-slate-900 rounded-2xl border border-cyan-500/30 w-full max-w-md max-h-[80vh] overflow-hidden">
             <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white">Keranjang Belanja</h3>
+                <h3 id="cart-title" className="text-lg font-bold text-white">Keranjang Belanja</h3>
                 <button 
+                  ref={firstFocusableElementRef}
                   onClick={() => setShowCart(false)}
-                  className="text-white/80 hover:text-white p-1"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setShowCart(false);
+                    }
+                  }}
+                  className="text-white/80 hover:text-white p-1 rounded focus:outline-none focus:ring-2 focus:ring-white/50"
+                  aria-label="Tutup keranjang belanja"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
             </div>
             
-            <div className="p-4 max-h-96 overflow-y-auto">
+            <div className="p-4 max-h-96 overflow-y-auto" role="region" aria-label="Daftar item dalam keranjang">
               {cart.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-4xl mb-2">🛒</div>
+                  <div className="text-4xl mb-2" aria-hidden="true">🛒</div>
                   <p className="text-gray-400">Keranjang masih kosong</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {cart.map(item => (
-                    <div key={item.id} className="flex items-center gap-3 bg-slate-800 p-3 rounded-lg">
-                      <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center">
+                    <div key={item.id} className="flex items-center gap-3 bg-slate-800 p-3 rounded-lg" role="listitem">
+                      <img 
+                        src={item.image} 
+                        alt={`${item.name} - ${item.description}`}
+                        className="w-12 h-12 bg-slate-700 rounded-lg object-cover"
+                        loading="lazy"
+                        width="48"
+                        height="48"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center" style={{display: 'none'}}>
                         <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
@@ -501,9 +634,16 @@ export default function SpareParts() {
                       </div>
                       <button 
                         onClick={() => removeFromCart(item.id)}
-                        className="text-red-400 hover:text-red-300 p-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            removeFromCart(item.id);
+                          }
+                        }}
+                        className="text-red-400 hover:text-red-300 p-1 rounded focus:outline-none focus:ring-2 focus:ring-red-400/50"
+                        aria-label={`Hapus ${item.name} dari keranjang`}
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
@@ -519,7 +659,16 @@ export default function SpareParts() {
                   <span className="text-white font-medium">Total:</span>
                   <span className="text-xl font-bold text-cyan-400">{formatPrice(getTotalPrice())}</span>
                 </div>
-                <button className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white py-3 rounded-lg transition-all duration-200 font-medium">
+                <button 
+                  ref={lastFocusableElementRef}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      // Handle checkout functionality here
+                    }
+                  }}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white py-3 rounded-lg transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+                >
                   Checkout
                 </button>
               </div>
