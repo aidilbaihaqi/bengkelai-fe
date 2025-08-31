@@ -17,7 +17,7 @@ const sparePartsData = {
       brand: "NGK",
       price: 85000,
       originalPrice: 95000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/Busi-Spark-Plug-600x600.jpg",
       rating: 4.8,
       reviews: 245,
       stock: 50,
@@ -31,7 +31,7 @@ const sparePartsData = {
       brand: "K&N",
       price: 125000,
       originalPrice: 140000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/SARINGAN udara.jpg",
       rating: 4.7,
       reviews: 189,
       stock: 25,
@@ -45,7 +45,7 @@ const sparePartsData = {
       brand: "Motul",
       price: 65000,
       originalPrice: 75000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/oli.jpg",
       rating: 4.9,
       reviews: 567,
       stock: 100,
@@ -61,7 +61,7 @@ const sparePartsData = {
       brand: "Brembo",
       price: 95000,
       originalPrice: 110000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/kampas rem.jpg",
       rating: 4.8,
       reviews: 156,
       stock: 30,
@@ -75,7 +75,7 @@ const sparePartsData = {
       brand: "Castrol",
       price: 35000,
       originalPrice: 40000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/cakram rem.jpg",
       rating: 4.6,
       reviews: 89,
       stock: 75,
@@ -91,7 +91,7 @@ const sparePartsData = {
       brand: "Yuasa",
       price: 285000,
       originalPrice: 320000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/AKI.jpeg",
       rating: 4.9,
       reviews: 234,
       stock: 15,
@@ -105,7 +105,7 @@ const sparePartsData = {
       brand: "Philips",
       price: 145000,
       originalPrice: 165000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/lampu led.jpg",
       rating: 4.7,
       reviews: 178,
       stock: 40,
@@ -121,7 +121,7 @@ const sparePartsData = {
       brand: "DID",
       price: 175000,
       originalPrice: 195000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/piston.jpg",
       rating: 4.8,
       reviews: 123,
       stock: 20,
@@ -135,7 +135,7 @@ const sparePartsData = {
       brand: "SSS",
       price: 85000,
       originalPrice: 95000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/pompa oli.jpg",
       rating: 4.6,
       reviews: 67,
       stock: 35,
@@ -151,7 +151,7 @@ const sparePartsData = {
       brand: "YSS",
       price: 450000,
       originalPrice: 520000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/pegas.webp",
       rating: 4.9,
       reviews: 89,
       stock: 12,
@@ -167,7 +167,7 @@ const sparePartsData = {
       brand: "Michelin",
       price: 285000,
       originalPrice: 315000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/ban.jpg",
       rating: 4.8,
       reviews: 156,
       stock: 25,
@@ -181,7 +181,7 @@ const sparePartsData = {
       brand: "Pirelli",
       price: 325000,
       originalPrice: 365000,
-      image: "/api/placeholder/200/200",
+      image: "/images/spare-part/radiator.jpg",
       rating: 4.9,
       reviews: 234,
       stock: 18,
@@ -379,7 +379,16 @@ export default function SpareParts() {
             <div key={product.id} className="bg-slate-800/60 backdrop-blur-xl border border-slate-700 rounded-xl overflow-hidden hover:border-cyan-500/50 transition-all duration-300 group">
               {/* Product Image */}
               <div className="relative overflow-hidden">
-                <div className="w-full h-48 bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center">
+                <img 
+                  src={product.image} 
+                  alt={product.name}
+                  className="w-full h-48 object-cover bg-gradient-to-br from-slate-700 to-slate-600"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="w-full h-48 bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center" style={{display: 'none'}}>
                   <svg className="w-16 h-16 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>

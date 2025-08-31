@@ -383,8 +383,8 @@ export default function Dashboard() {
           <p className="text-sm text-gray-300">Temukan bengkel terdekat</p>
         </button>
         
-        <button 
-          onClick={() => setActiveTab('spare-parts')}
+        <Link 
+          to="/spare-parts"
           className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 border border-green-500/30 rounded-xl p-6 text-left hover:from-green-600/30 hover:to-emerald-600/30 transition-all duration-200 group"
         >
           <div className="mb-2 group-hover:scale-110 transition-transform">
@@ -394,7 +394,7 @@ export default function Dashboard() {
           </div>
           <h4 className="font-semibold text-white mb-1">Spare Parts</h4>
           <p className="text-sm text-gray-300">Estimasi harga suku cadang</p>
-        </button>
+        </Link>
         
         <button 
           onClick={() => setActiveTab('reminder')}
