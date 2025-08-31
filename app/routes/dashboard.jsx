@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "@remix-run/react";
-import { json } from "@remix-run/node";
 
 export const meta = () => {
   return [
@@ -20,6 +19,265 @@ export default function Dashboard() {
     tire: { status: 'good', percentage: 80, lastCheck: '2024-01-08' },
     chain: { status: 'warning', percentage: 60, lastCheck: '2024-01-03' }
   });
+
+  // Spare Parts state - moved to component level to avoid hooks rule violation
+  const [selectedPart, setSelectedPart] = useState(null);
+  const [showComparison, setShowComparison] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [sortBy, setSortBy] = useState('name');
+  const [cart, setCart] = useState([]);
+  const [showProductDetail, setShowProductDetail] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Reminder state - moved to component level to avoid hooks rule violation
+  const [selectedReminder, setSelectedReminder] = useState(null);
+  const [showAddReminder, setShowAddReminder] = useState(false);
+  const [newReminder, setNewReminder] = useState({
+    component: '',
+    dueDate: '',
+    urgency: 'medium',
+    description: ''
+  });
+
+  // Workshop Finder state - moved to component level to avoid hooks rule violation
+  const [selectedWorkshop, setSelectedWorkshop] = useState(null);
+  const mapRef = useRef(null);
+  const [map, setMap] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const markersRef = useRef([]);
+
+  // Workshop data
+  const workshops = [
+    {
+      id: 1,
+      name: "Bengkel Jaya Motor",
+      address: "Jl. Sudirman No. 123, Jakarta Pusat",
+      phone: "+62 21 1234567",
+      rating: 4.5,
+      services: ["Ganti Oli", "Servis Mesin", "Ganti Ban", "Tune Up"],
+      openHours: "08:00 - 17:00",
+      lat: -6.2088,
+      lng: 106.8456,
+      distance: "1.2 km",
+      specialties: ["Honda", "Yamaha", "Suzuki"]
+    },
+    {
+      id: 2,
+      name: "Motor Service Center",
+      address: "Jl. Thamrin No. 456, Jakarta Pusat",
+      phone: "+62 21 7654321",
+      rating: 4.2,
+      services: ["Ganti Oli", "Tune Up", "Rem", "Electrical"],
+      openHours: "09:00 - 18:00",
+      lat: -6.1944,
+      lng: 106.8229,
+      distance: "2.1 km",
+      specialties: ["Kawasaki", "Honda", "Yamaha"]
+    },
+    {
+      id: 3,
+      name: "Bengkel Mandiri",
+      address: "Jl. Gatot Subroto No. 789, Jakarta Selatan",
+      phone: "+62 21 9876543",
+      rating: 4.7,
+      services: ["Ganti Oli", "AC Motor", "Electrical", "Body Repair"],
+      openHours: "07:00 - 19:00",
+      lat: -6.2297,
+      lng: 106.8175,
+      distance: "3.5 km",
+      specialties: ["Semua Merk", "Matic", "Sport"]
+    },
+    {
+      id: 4,
+      name: "Speed Motor Workshop",
+      address: "Jl. Kuningan Raya No. 321, Jakarta Selatan",
+      phone: "+62 21 5555123",
+      rating: 4.3,
+      services: ["Ganti Oli", "Performance Tuning", "Modifikasi"],
+      openHours: "10:00 - 20:00",
+      lat: -6.2382,
+      lng: 106.8317,
+      distance: "4.2 km",
+      specialties: ["Sport Bike", "Racing", "Custom"]
+    },
+    {
+      id: 5,
+      name: "Bengkel Rakyat 24 Jam",
+      address: "Jl. Casablanca No. 88, Jakarta Selatan",
+      phone: "+62 21 7777888",
+      rating: 4.0,
+      services: ["Ganti Oli", "Emergency Service", "Towing"],
+      openHours: "24 Jam",
+      lat: -6.2241,
+      lng: 106.8425,
+      distance: "2.8 km",
+      specialties: ["Emergency", "24 Hours", "Towing"]
+    }
+  ];
+
+  // Workshop Finder useEffect - moved to component level to avoid hooks rule violation
+  useEffect(() => {
+    if (activeTab === 'workshop-finder') {
+      const initMap = async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
+
+          // Get user location
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const userPos = {
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude
+                };
+                setUserLocation(userPos);
+                loadGoogleMaps(userPos);
+              },
+              (error) => {
+                console.error('Error getting location:', error);
+                // Default to Jakarta if location access denied
+                const defaultPos = { lat: -6.2088, lng: 106.8456 };
+                setUserLocation(defaultPos);
+                loadGoogleMaps(defaultPos);
+              }
+            );
+          } else {
+            // Default to Jakarta if geolocation not supported
+            const defaultPos = { lat: -6.2088, lng: 106.8456 };
+            setUserLocation(defaultPos);
+            loadGoogleMaps(defaultPos);
+          }
+        } catch (err) {
+          setError('Failed to initialize map');
+          setIsLoading(false);
+        }
+      };
+
+      const loadGoogleMaps = async (center) => {
+        try {
+          const { Loader } = await import('@googlemaps/js-api-loader');
+          const loader = new Loader({
+            apiKey: "AIzaSyBHVIS02EN0lzuURaOEWbNdqGr_b-WrPLY",
+            version: "weekly",
+            libraries: ["places"]
+          });
+
+          const google = await loader.load();
+          
+          const mapInstance = new google.maps.Map(mapRef.current, {
+            center: center,
+            zoom: 13,
+            styles: [
+              {
+                "featureType": "all",
+                "elementType": "geometry.fill",
+                "stylers": [{"color": "#1e293b"}]
+              },
+              {
+                "featureType": "all",
+                "elementType": "labels.text.fill",
+                "stylers": [{"color": "#ffffff"}]
+              },
+              {
+                "featureType": "water",
+                "elementType": "geometry",
+                "stylers": [{"color": "#0f172a"}]
+              },
+              {
+                "featureType": "road",
+                "elementType": "geometry",
+                "stylers": [{"color": "#374151"}]
+              }
+            ]
+          });
+
+          // Clear existing markers
+          markersRef.current.forEach(marker => {
+            marker.setMap(null);
+          });
+          markersRef.current = [];
+
+          // Add user location marker
+          const userMarker = new google.maps.Marker({
+            position: center,
+            map: mapInstance,
+            title: "Your Location",
+            icon: {
+              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="#ffffff" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" fill="#ffffff"/>
+                </svg>
+              `),
+              scaledSize: new google.maps.Size(24, 24)
+            }
+          });
+          markersRef.current.push(userMarker);
+
+          // Add workshop markers
+          workshops.forEach(workshop => {
+            const marker = new google.maps.Marker({
+              position: { lat: workshop.lat, lng: workshop.lng },
+              map: mapInstance,
+              title: workshop.name,
+              icon: {
+                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#EF4444"/>
+                  </svg>
+                `),
+                scaledSize: new google.maps.Size(32, 32)
+              }
+            });
+
+            marker.addListener('click', () => {
+              setSelectedWorkshop(workshop);
+            });
+            
+            markersRef.current.push(marker);
+          });
+
+          setMap(mapInstance);
+          setIsLoading(false);
+        } catch (err) {
+          console.error('Error loading Google Maps:', err);
+          setError('Failed to load map');
+          setIsLoading(false);
+        }
+      };
+
+      if (mapRef.current) {
+        initMap();
+      }
+    }
+
+    // Cleanup function to prevent DOM manipulation conflicts
+    return () => {
+      // Clear markers first
+      if (markersRef.current && markersRef.current.length > 0) {
+        markersRef.current.forEach(marker => {
+          if (marker && marker.setMap) {
+            marker.setMap(null);
+          }
+        });
+        markersRef.current = [];
+      }
+      
+      // Clear map instance
+      if (map && map.getDiv) {
+        setMap(null);
+      }
+      
+      // Only clear container if it exists and has children
+      if (mapRef.current && mapRef.current.hasChildNodes()) {
+        mapRef.current.innerHTML = '';
+      }
+    };
+  }, [activeTab, workshops]);
 
   const [serviceReminders, setServiceReminders] = useState([
     {
@@ -60,10 +318,10 @@ export default function Dashboard() {
   const getUrgencyColor = (urgency) => {
     switch(urgency) {
       case 'critical': return 'bg-red-500 text-white';
-      case 'high': return 'bg-red-500/20 text-red-300 border border-red-500/30';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30';
-      case 'low': return 'bg-green-500/20 text-green-300 border border-green-500/30';
-      default: return 'bg-gray-500/20 text-gray-300 border border-gray-500/30';
+      case 'high': return 'bg-orange-500 text-white';
+      case 'medium': return 'bg-yellow-500 text-white';
+      case 'low': return 'bg-green-500 text-white';
+      default: return 'bg-gray-500 text-white';
     }
   };
 
@@ -139,10 +397,14 @@ export default function Dashboard() {
         </button>
         
         <button 
-          onClick={() => setActiveTab('service-reminders')}
+          onClick={() => setActiveTab('reminder')}
           className="bg-gradient-to-br from-orange-600/20 to-red-600/20 border border-orange-500/30 rounded-xl p-6 text-left hover:from-orange-600/30 hover:to-red-600/30 transition-all duration-200 group"
         >
-          <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">⏰</div>
+          <div className="mb-2 group-hover:scale-110 transition-transform">
+            <svg className="w-8 h-8 text-orange-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 6c-.55 0-1 .45-1 1v3.5c0 .28.11.53.29.71l2.5 2.5c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13 11.59V9c0-.55-.45-1-1z"/>
+            </svg>
+          </div>
           <h4 className="font-semibold text-white mb-1">Reminder</h4>
           <p className="text-sm text-gray-300">Jadwal perawatan motor</p>
         </button>
@@ -284,82 +546,6 @@ export default function Dashboard() {
 
 
   const renderWorkshopFinder = () => {
-    const [selectedWorkshop, setSelectedWorkshop] = useState(null);
-    const mapRef = useRef(null);
-    const [map, setMap] = useState(null);
-    const [userLocation, setUserLocation] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    const workshops = [
-      {
-        id: 1,
-        name: "Bengkel Jaya Motor",
-        address: "Jl. Sudirman No. 123, Jakarta Pusat",
-        phone: "+62 21 1234567",
-        rating: 4.5,
-        services: ["Ganti Oli", "Servis Mesin", "Ganti Ban", "Tune Up"],
-        openHours: "08:00 - 17:00",
-        lat: -6.2088,
-        lng: 106.8456,
-        distance: "1.2 km",
-        specialties: ["Honda", "Yamaha", "Suzuki"]
-      },
-      {
-        id: 2,
-        name: "Motor Service Center",
-        address: "Jl. Thamrin No. 456, Jakarta Pusat",
-        phone: "+62 21 7654321",
-        rating: 4.2,
-        services: ["Ganti Oli", "Tune Up", "Rem", "Electrical"],
-        openHours: "09:00 - 18:00",
-        lat: -6.1944,
-        lng: 106.8229,
-        distance: "2.1 km",
-        specialties: ["Kawasaki", "Honda", "Yamaha"]
-      },
-      {
-        id: 3,
-        name: "Bengkel Mandiri",
-        address: "Jl. Gatot Subroto No. 789, Jakarta Selatan",
-        phone: "+62 21 9876543",
-        rating: 4.7,
-        services: ["Ganti Oli", "AC Motor", "Electrical", "Body Repair"],
-        openHours: "07:00 - 19:00",
-        lat: -6.2297,
-        lng: 106.8175,
-        distance: "3.5 km",
-        specialties: ["Semua Merk", "Matic", "Sport"]
-      },
-      {
-        id: 4,
-        name: "Speed Motor Workshop",
-        address: "Jl. Kuningan Raya No. 321, Jakarta Selatan",
-        phone: "+62 21 5555123",
-        rating: 4.3,
-        services: ["Ganti Oli", "Performance Tuning", "Modifikasi"],
-        openHours: "10:00 - 20:00",
-        lat: -6.2382,
-        lng: 106.8317,
-        distance: "4.2 km",
-        specialties: ["Sport Bike", "Racing", "Custom"]
-      },
-      {
-        id: 5,
-        name: "Bengkel Rakyat 24 Jam",
-        address: "Jl. Casablanca No. 88, Jakarta Selatan",
-        phone: "+62 21 7777888",
-        rating: 4.0,
-        services: ["Ganti Oli", "Emergency Service", "Towing"],
-        openHours: "24 Jam",
-        lat: -6.2241,
-        lng: 106.8425,
-        distance: "2.8 km",
-        specialties: ["Emergency", "24 Hours", "Towing"]
-      }
-    ];
-
-    useEffect(() => {
       const initMap = async () => {
         try {
           setIsLoading(true);
@@ -480,10 +666,7 @@ export default function Dashboard() {
         }
       };
 
-      initMap();
-    }, []);
-
-    return (
+      return (
       <div className="space-y-6">
         <div className="bg-gradient-to-br from-slate-800/60 via-slate-700/40 to-slate-800/60 backdrop-blur-xl border border-cyan-500/20 ring-1 ring-white/10 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
@@ -692,14 +875,6 @@ export default function Dashboard() {
 
 
   const renderReminder = () => {
-    const [selectedReminder, setSelectedReminder] = useState(null);
-    const [showAddReminder, setShowAddReminder] = useState(false);
-    const [newReminder, setNewReminder] = useState({
-      component: '',
-      dueDate: '',
-      urgency: 'medium',
-      description: ''
-    });
 
     const addReminder = () => {
       if (newReminder.component && newReminder.dueDate) {
@@ -874,14 +1049,6 @@ export default function Dashboard() {
   };
 
   const renderSpareParts = () => {
-    const [selectedPart, setSelectedPart] = useState(null);
-    const [showComparison, setShowComparison] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('All');
-    const [sortBy, setSortBy] = useState('name');
-    const [cart, setCart] = useState([]);
-    const [showProductDetail, setShowProductDetail] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState(null);
     
     const spareParts = [
       {
