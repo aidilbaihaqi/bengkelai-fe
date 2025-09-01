@@ -1,0 +1,37 @@
+{
+  "name": "BengkelAI",
+  "short_name": "BengkelAI",
+  "description": "Platform AI untuk Perawatan Motor Terpercaya",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0891b2",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "/16x16.svg",
+      "sizes": "16x16",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/32x32.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/48x48.svg",
+      "sizes": "48x48",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/96x96.svg",
+      "sizes": "96x96",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["automotive", "utilities"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}
