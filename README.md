@@ -1,11 +1,11 @@
 # BengkelAi - Digital Motorcycle Health & Service Ecosystem with AI Analysis
 
-🏍️ **Platform AI untuk Ekosistem Kesehatan & Layanan Motor Digital**
+🏍️ **AI Platform for Digital Motorcycle Health & Service Ecosystem**
 
 [![Development Status](https://img.shields.io/badge/Status-Development%20v1-orange)](https://bengkel-ai.id)
 [![Live Demo](https://img.shields.io/badge/Demo-Live-green)](https://bengkel-ai.id)
 
-## 👥 Tim Pengembang
+## 👥 Development Team
 
 - **Widya** - Business and Product Lead
 - **Aidil Baihaqi** - Full Stack Developer  
@@ -16,51 +16,51 @@
 **Project Theme**: Digital Motorcycle Health & Service Ecosystem with AI Analysis  
 **Project Name**: BengkelAi
 
-Sebuah aplikasi yang dapat membantu pemilik motor mendiagnosa masalah, kasih estimasi biaya, berikan rekomendasi dan langsung hubungkan ke bengkel terdekat. Platform ini dirancang khusus untuk 120 juta pengguna motor di Indonesia yang membutuhkan solusi praktis dan terpercaya untuk perawatan kendaraan mereka.
+An application that helps motorcycle owners diagnose problems, get cost estimates, receive recommendations, and directly connect to the nearest workshop. This platform is specifically designed for 120 million motorcycle users in Indonesia who need practical and reliable solutions for their vehicle maintenance.
 
-## 🚧 Status Pengembangan
+## 🚧 Development Status
 
-**Development v1** - Tahap Awal Pengembangan
+**Development v1** - Early Development Stage
 
-Saat ini aplikasi masih dalam tahap pengembangan awal. Fitur yang dapat dilihat dan diakses:
+Currently, the application is still in the early development stage. Features that can be viewed and accessed:
 
 ## 🚀 Unique Sales Proposition
 
-### 🤖 AI Gejala → Diagnosa Ringan
-User cukup ketik gejala/suara: "knalpot keluar asap putih" → AI kasih kemungkinan penyebab, estimasi biaya, & tingkat keparahan (urgent / bisa ditunda).
+### 🤖 AI Symptoms → Light Diagnosis
+Users simply type symptoms/sounds: "exhaust emits white smoke" → AI provides possible causes, cost estimates, & severity level (urgent / can be postponed).
 
-### ⏰ Service Reminder Otomatis
-Aplikasi otomatis hitung jadwal ganti oli, rantai, kampas rem → kasih notifikasi push.
+### ⏰ Automatic Service Reminder
+Application automatically calculates oil change, chain, brake pad replacement schedules → sends push notifications.
 
 ### 🗺️ Workshop Finder + Booking
-- Cari bengkel terdekat (Google Maps API)
-- Booking slot → skip antrian
-- Rating & review bengkel
+- Find nearest workshops (Google Maps API)
+- Book slots → skip queues
+- Workshop ratings & reviews
 
-### 💰 Estimasi Biaya
-- AI tampilkan range harga sparepart & jasa (dari data katalog)
-- Bisa bandingkan bengkel terdekat
+### 💰 Cost Estimation
+- AI displays price range for spare parts & services (from catalog data)
+- Can compare nearby workshops
 
-### 🏪 Integrasi Bengkel Lokal
-- Bengkel dapat dashboard: kelola booking, stok sparepart, promo
-- Bisa jadi peluang digitalisasi bengkel kecil
+### 🏪 Local Workshop Integration
+- Workshops get dashboard: manage bookings, spare part stock, promotions
+- Can be an opportunity for small workshop digitalization
 
-### 🛒 Marketplace Produk Bengkel
-Bengkel dapat memajang produk-produk mereka pada sebuah katalog khusus.
+### 🛒 Workshop Product Marketplace
+Workshops can display their products in a specialized catalog.
 
-### ✅ Fitur yang Tersedia Saat Ini
-- **Landing Page** - Halaman utama dengan informasi platform
-- **Prototype AI Engine** - Demo awal sistem kecerdasan buatan
-- **LLM Integration** - Integrasi Large Language Model untuk konsultasi
-- **NLP Processing** - Pemrosesan bahasa alami untuk analisis
-- **Spare Part E-Commerce** - Prototype marketplace suku cadang
-- **Workshop Finder** - Pencari bengkel terdekat
-- **Service Reminder** - Pengingat jadwal servis kendaraan
+### ✅ Currently Available Features
+- **Landing Page** - Main page with platform information
+- **Prototype AI Engine** - Early demo of artificial intelligence system
+- **LLM Integration** - Large Language Model integration for consultation
+- **NLP Processing** - Natural language processing for analysis
+- **Spare Part E-Commerce** - Spare parts marketplace prototype
+- **Workshop Finder** - Nearest workshop finder
+- **Service Reminder** - Vehicle service schedule reminder
 
-### 🔄 Dalam Pengembangan
-- Sistem booking online
-- Dashboard bengkel
-- Sistem pembayaran
+### 🔄 In Development
+- Online booking system
+- Workshop dashboard
+- Payment system
 - Mobile application
 - Advanced AI diagnostics
 
