@@ -15,14 +15,6 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          remix: ['@remix-run/react'],
-        },
-      },
-    },
     sourcemap: false, // Disable source maps in production for security
   },
 });
