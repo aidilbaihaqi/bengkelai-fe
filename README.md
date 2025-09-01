@@ -200,25 +200,10 @@ Kunjungi aplikasi live di: **[https://bengkel-ai.id](https://bengkel-ai.id)**
 - [ ] Fleet Management
 - [ ] Enterprise features
 
-## 🤝 Contributing
-
-Kami menyambut kontribusi dari developer dan automotive enthusiasts!
-
-1. Fork repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
-
-## 📄 License
-
-Project ini dilisensikan di bawah MIT License - lihat file [LICENSE](LICENSE) untuk detail.
-
 ## 📞 Contact
 
 - **Website**: [bengkel-ai.id](https://bengkel-ai.id)
-- **Email**: info@bengkel-ai.id
-- **GitHub**: [Repository Link]
+- **Email**: aidilmusirjun@gmailcom
 
 ## 🙏 Acknowledgments
 
