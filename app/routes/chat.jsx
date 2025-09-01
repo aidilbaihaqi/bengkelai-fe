@@ -119,7 +119,7 @@ export default function Chat() {
           `location=${lat},${lng}&` +
           `radius=${radius}&` +
           `type=car_repair&` +
-          `key=YOUR_GOOGLE_PLACES_API_KEY`, // Ganti dengan API key Google Places yang valid
+          `key=AIzaSyCzBVm-B2VXdnTupHFPpSEo30DJpI3iXsU`, // Ganti dengan API key Google Places yang valid
           {
             method: 'GET',
             headers: {
@@ -777,11 +777,13 @@ export default function Chat() {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center flex-1 min-w-0">
             <Link to="/" className="flex items-center mr-3 sm:mr-6 hover:opacity-80 transition-opacity flex-shrink-0">
-              <div className="bg-teal-500 p-1.5 sm:p-2 rounded-lg mr-2 sm:mr-3">
-                <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-              </div>
+              <img 
+                src="/32x32.svg" 
+                alt="BengkelAI Logo" 
+                className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3"
+                width="32"
+                height="32"
+              />
               <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">BengkelAI</span>
             </Link>
             <nav className="hidden md:flex items-center space-x-4">

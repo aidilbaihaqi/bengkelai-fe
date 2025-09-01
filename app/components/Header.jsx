@@ -24,10 +24,12 @@ export default function Header({ title }) {
         <div className="flex justify-between items-center py-4">
           {/* Logo & Brand */}
           <div className="flex items-center space-x-3 group cursor-pointer">
-            <div className="bg-gradient-to-br from-cyan-400 to-blue-500 p-2 rounded-xl shadow-lg group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 group-hover:shadow-xl group-hover:shadow-cyan-500/50">
-              <svg className="w-6 h-6 text-white group-hover:animate-pulse" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-              </svg>
+            <div className="bg-gradient-to-br from-purple-400 to-purple-600 p-2 rounded-xl shadow-lg group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 group-hover:shadow-xl group-hover:shadow-purple-500/50">
+              <img 
+                src="/32x32.svg" 
+                alt="BengkelAI Logo" 
+                className="w-6 h-6 group-hover:animate-pulse filter brightness-0 invert"
+              />
             </div>
             <div>
               <h1 className="text-xl font-bold text-white tracking-tight group-hover:text-cyan-400 transition-all duration-300 group-hover:scale-105">
